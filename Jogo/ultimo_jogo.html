@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jovens Titãs: O Último Jogo - Edição Fire Red RPG</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Fontes Retrô e Comic -->
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Bangers&family=Rajdhani:wght@600;700&display=swap" rel="stylesheet">
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    /* Configurações Globais de Pixel Art & Fontes GBA */
+    body {
+      font-family: 'Press Start 2P', monospace;
+      background-color: #05070d;
+      color: #ffffff;
+      user-select: none;
+      overflow-x: hidden;
+      image-rendering: pixelated;
+    }
+
+    .font-gb {
+      font-family: 'Press Start 2P', monospace;
+      line-height: 1.5;
+    }
+    
+    .font-comic {
+      font-family: 'Bangers', cursive;
+      letter-spacing: 1px;
+    }
+
+    /* BORDAS E ESTILOS CLÁSSICOS DE POKÉMON FIRERED */
+    .gba-window {
+      background: linear-gradient(180deg, #f8f8f8 0%, #e0e0e0 100%);
+      border: 4px solid #383838;
+      border-radius: 8px;
+      box-shadow: inset -2px -2px 0 shadow, inset 2px 2px 0 #ffffff, 0 4px 10px rgba(0,0,0,0.8);
+      color: #202020;
+    }
+
+    .gba-window-dark {
+      background: linear-gradient(180deg, #283044 0%, #171d2a 100%);
+      border: 4px solid #4a5568;
+      border-radius: 8px;
+      box-shadow: inset -2px -2px 0 #0f131d, inset 2px 2px 0 #5a6988;
+      color: #f7fafc;
+    }
+
+    .gba-hud-box {
+      background: #f8f8d8;
+      border: 3px solid #585840;
+      border-radius: 6px;
+      box-shadow: 2px 2px 0px #202010;
+      color: #202010;
+    }
+
+    /* BARRA DE HP ANIMAÇÃO POKEMON */
+    .hp-bar-fill {
+      transition: width 0.6s cubic-bezier(0.25, 1, 0.5, 1), background-color 0.4s ease;
+    }
+
+    /* TERRENOS DE BATALHA / PLATAFORMAS (PEDESTAIS) */
+    .battle-base-ally {
+      background: radial-gradient(ellipse at center, #52a038 0%, #2e601a 70%, transparent 71%);
+      border-radius: 50%;
+      transform: scaleY(0.35);
+    }
+
+    .battle-base-enemy {
+      background: radial-gradient(ellipse at center, #7888a0 0%, #404858 70%, transparent 71%);
+      border-radius: 50%;
+      transform: scaleY(0.35);
+    }
+
+    /* SPRITES E ESPELHAMENTO DE BATALHA */
+    .ally-sprite-view {
+      transform: scaleX(-1); /* Espelhamento horizontal para ver de costas/diagonal */
+      filter: drop-shadow(-4px 4px 0px rgba(0,0,0,0.4));
+    }
+
+    .enemy-sprite-view {
+      filter: drop-shadow(4px 4px 0px rgba(0,0,0,0.4));
+    }
+
+    /* ANIMAÇÕES GBA DE BATALHA */
+    /* Entrada Deslizante */
+    @keyframes slideInAlly {
+      0% { transform: translateX(-250px) scaleX(-1); opacity: 0; }
+      100% { transform: translateX(0) scaleX(-1); opacity: 1; }
+    }
+    .anim-slide-in-ally {
+      animation: slideInAlly 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    @keyframes slideInEnemy {
+      0% { transform: translateX(250px); opacity: 0; }
+      100% { transform: translateX(0); opacity: 1; }
+    }
+    .anim-slide-in-enemy {
+      animation: slideInEnemy 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+    }
+
+    /* Investida de Ataque */
+    @keyframes attackAlly {
+      0% { transform: translateX(0) translateY(0) scaleX(-1); }
+      40% { transform: translateX(60px) translateY(-20px) scaleX(-1); }
+      100% { transform: translateX(0) translateY(0) scaleX(-1); }
+    }
+    .anim-attack-ally {
+      animation: attackAlly 0.4s ease-in-out;
+    }
+
+    @keyframes attackEnemy {
+      0% { transform: translateX(0) translateY(0); }
+      40% { transform: translateX(-60px) translateY(20px); }
+      100% { transform: translateX(0) translateY(0); }
+    }
+    .anim-attack-enemy {
+      animation: attackEnemy 0.4s ease-in-out;
+    }
+
+    /* Dano e Piscar */
+    @keyframes damageFlicker {
+      0%, 100% { opacity: 1; filter: brightness(1); }
+      20%, 60% { opacity: 0.1; filter: brightness(3) sepia(1) hue-rotate(-50deg); }
+      40%, 80% { opacity: 0.9; filter: brightness(2); }
+    }
+    .anim-damage {
+      animation: damageFlicker 0.45s ease-in-out;
+    }
+
+    /* Desmaio / Faint (Caindo pela plataforma) */
+    @keyframes faintDown {
+      0% { transform: translateY(0); opacity: 1; }
+      100% { transform: translateY(120px); opacity: 0; }
+    }
+    .anim-faint {
+      animation: faintDown 0.8s forwards ease-in;
+    }
+
+    /* Tremor de Tela (Screen Shake) */
+    @keyframes gbaShake {
+      0%, 100% { transform: translate(0, 0); }
+      20% { transform: translate(-8px, 6px); }
+      40% { transform: translate(8px, -6px); }
+      60% { transform: translate(-5px, 4px); }
+      80% { transform: translate(5px, -4px); }
+    }
+    .anim-screen-shake {
+      animation: gbaShake 0.35s ease-in-out;
+    }
+
+    /* Transição de Transição Estilo Pokémon Mosaico */
+    @keyframes transitionCurtain {
+      0% { transform: scaleY(0); }
+      50% { transform: scaleY(1); }
+      100% { transform: scaleY(0); }
+    }
+    .battle-transition-overlay {
+      position: absolute;
+      inset: 0;
+      background: #000;
+      z-index: 100;
+      pointer-events: none;
+      transform-origin: center;
+      display: none;
+    }
+    .battle-transition-overlay.active {
+      display: block;
+      animation: transitionCurtain 0.8s ease-in-out forwards;
+    }
+
+    /* Texto Flutuante Pixelado */
+    .pixel-dmg-text {
+      position: absolute;
+      font-family: 'Press Start 2P', monospace;
+      font-size: 16px;
+      text-shadow: 2px 2px 0px #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000;
+      animation: floatDmg 1s ease-out forwards;
+      pointer-events: none;
+      z-index: 60;
+    }
+    @keyframes floatDmg {
+      0% { opacity: 1; transform: translateY(0) scale(0.8); }
+      30% { transform: translateY(-25px) scale(1.2); }
+      100% { opacity: 0; transform: translateY(-50px) scale(1); }
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #1a202c; }
+    ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between relative bg-slate-950 text-slate-100 select-none">
+
+  <!-- Efeito de Cortina de Transição de Batalha -->
+  <div id="transitionOverlay" class="battle-transition-overlay"></div>
+
+  <!-- CABEÇALHO DO JOGO (ESTILO GBA TITLE BAR) -->
+  <header class="relative z-10 bg-slate-900 border-b-4 border-slate-700 p-2 md:p-3 shadow-xl flex justify-between items-center px-4">
+    <div class="flex items-center gap-3">
+      <div class="bg-red-600 text-white font-gb text-xs md:text-sm px-2 py-1 rounded border-2 border-white shadow">
+        FIRE RED
+      </div>
+      <h1 class="font-gb text-xs md:text-sm text-yellow-400 tracking-wider">
+        TITÃS <span class="text-cyan-400 text-[10px] hidden sm:inline">• O ÚLTIMO JOGO</span>
+      </h1>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="audioBtn" onclick="toggleAudio()" class="bg-slate-800 hover:bg-slate-700 text-yellow-400 p-2 rounded border-2 border-slate-600 text-[10px] flex items-center gap-1 font-gb">
+        <i data-lucide="volume-2" class="w-4 h-4"></i>
+        <span id="audioStatusText" class="hidden md:inline">SOM: ON</span>
+      </button>
+      <button onclick="showMainMenu()" class="bg-red-700 hover:bg-red-600 text-white p-2 rounded border-2 border-red-500 text-[10px] font-gb flex items-center gap-1">
+        <i data-lucide="home" class="w-4 h-4"></i> MENU
+      </button>
+    </div>
+  </header>
+
+  <!-- ÁREA PRINCIPAL DAS TELAS DO JOGO -->
+  <main class="relative z-10 flex-grow flex items-center justify-center p-2 sm:p-4">
+
+    <!-- =================================================================== -->
+    <!-- TELA 1: MENU PRINCIPAL (ESTILO FIRERED TITLE SCREEN) -->
+    <!-- =================================================================== -->
+    <section id="screenMenu" class="w-full max-w-3xl gba-window-dark p-6 md:p-8 text-center flex flex-col items-center gap-6 my-auto">
+      <div class="space-y-2">
+        <span class="text-[10px] text-red-400 tracking-widest block font-gb">GAME BOY ADVANCE EDITION</span>
+        <h2 class="font-gb text-xl sm:text-3xl text-yellow-400 drop-shadow-[0_4px_0_rgba(0,0,0,1)] leading-tight">
+          JOVENS TITÃS
+        </h2>
+        <p class="font-gb text-xs text-cyan-300">O ÚLTIMO JOGO DA ARENA</p>
+      </div>
+
+      <!-- Grid de Personagens Ilustrativos -->
+      <div class="grid grid-cols-4 sm:grid-cols-6 gap-2 w-full bg-slate-950/80 p-3 rounded-lg border-2 border-slate-700">
+        <img src="robin.jpg" class="w-full h-14 object-cover rounded border border-red-500" alt="Robin">
+        <img src="ravena.jpg" class="w-full h-14 object-cover rounded border border-purple-500" alt="Ravena">
+        <img src="mutano.jpg" class="w-full h-14 object-cover rounded border border-green-500" alt="Mutano">
+        <img src="slade.png" class="w-full h-14 object-cover rounded border border-orange-500" alt="Slade">
+        <img src="red x.png" class="w-full h-14 object-cover rounded border border-red-600" alt="Red X">
+        <img src="trigon.png" class="w-full h-14 object-cover rounded border border-rose-700" alt="Trigon">
+      </div>
+
+      <div class="flex flex-col sm:flex-row gap-4 w-full max-w-md font-gb text-xs">
+        <button onclick="startMode('pve')" class="flex-1 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold py-4 px-4 rounded border-4 border-yellow-700 shadow-lg transition active:translate-y-1 flex justify-center items-center gap-2">
+          <i data-lucide="swords" class="w-5 h-5"></i> MODO HISTÓRIA
+        </button>
+        <button onclick="startMode('pvp')" class="flex-1 bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-4 px-4 rounded border-4 border-cyan-800 shadow-lg transition active:translate-y-1 flex justify-center items-center gap-2">
+          <i data-lucide="users" class="w-5 h-5"></i> DUELO PVP (1v1)
+        </button>
+      </div>
+
+      <div class="text-[10px] text-slate-400 bg-slate-950 p-3 rounded border border-slate-800 text-left leading-relaxed w-full">
+        <p class="text-yellow-400 font-bold mb-1">📜 INSTRUÇÕES DO TREINADOR TITÃ:</p>
+        Derrote os vilões em sequências de batalhas no verdadeiro formato Pokémon FireRed! Use habilidades táticas, gerencie seus PP/Cooldowns e derrote a Forma Suprema do Mestre dos Jogos!
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TELA 2: CUTSCENE / HISTÓRIA PVE -->
+    <!-- =================================================================== -->
+    <section id="screenStory" class="hidden w-full max-w-2xl gba-window-dark p-4 sm:p-6 flex flex-col gap-4">
+      <div class="flex items-center gap-2 border-b-2 border-slate-700 pb-2">
+        <div class="p-1 bg-yellow-500 text-black rounded">
+          <i data-lucide="book-open" class="w-5 h-5"></i>
+        </div>
+        <h3 class="font-gb text-xs sm:text-sm text-yellow-400">DESAFIO DA ARENA DIMENSIONAL</h3>
+      </div>
+
+      <div class="gba-window p-4 flex flex-col sm:flex-row gap-4 items-center min-h-[140px]">
+        <img id="storySpeakerImg" src="" class="w-20 h-20 object-cover rounded border-2 border-slate-700 flex-shrink-0" alt="Speaker">
+        <div class="space-y-2">
+          <h4 id="storySpeakerName" class="font-gb text-xs text-red-600">Mestre dos Jogos</h4>
+          <p id="storyText" class="font-gb text-[11px] leading-relaxed text-slate-800">"Bem-vindos..."</p>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center pt-2 font-gb text-[10px]">
+        <button onclick="showMainMenu()" class="text-slate-400 hover:text-white">VOLTAR</button>
+        <button onclick="nextStoryStep()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded border-2 border-black font-bold flex items-center gap-1">
+          AVANÇAR <i data-lucide="arrow-right" class="w-4 h-4"></i>
+        </button>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TELA 3: SELEÇÃO DE PERSONAGENS -->
+    <!-- =================================================================== -->
+    <section id="screenSelect" class="hidden w-full max-w-4xl gba-window-dark p-4 flex flex-col gap-4">
+      <div class="text-center space-y-1">
+        <h3 id="selectTitle" class="font-gb text-sm sm:text-base text-yellow-400">ESCOLHA SEU COMBATENTE</h3>
+        <p id="selectSubtitle" class="font-gb text-[10px] text-cyan-400">Selecione o Titã para o combate</p>
+      </div>
+
+      <!-- Abas Heróis / Vilões -->
+      <div class="flex justify-center gap-2 font-gb text-[10px]">
+        <button id="tabHeroesBtn" onclick="switchCharTab('heroes')" class="px-3 py-2 rounded-t bg-yellow-500 text-black border-2 border-black font-bold">
+          HERÓIS TITÃS
+        </button>
+        <button id="tabVillainsBtn" onclick="switchCharTab('villains')" class="px-3 py-2 rounded-t bg-slate-800 text-slate-400 border-2 border-slate-700">
+          VILÕES DA ARENA
+        </button>
+      </div>
+
+      <!-- Grid de Seleção -->
+      <div id="charGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 max-h-[40vh] overflow-y-auto p-2 bg-slate-950 rounded border-2 border-slate-800">
+        <!-- JS Render -->
+      </div>
+
+      <!-- Painel de Estatísticas / Detalhes -->
+      <div id="charDetailsPanel" class="gba-window p-3 grid grid-cols-1 md:grid-cols-3 gap-3 items-center text-[10px]">
+        <div class="flex items-center gap-3">
+          <img id="detailImg" src="" class="w-16 h-16 object-cover rounded border-2 border-slate-700">
+          <div>
+            <h4 id="detailName" class="font-gb text-xs text-slate-900">Nome</h4>
+            <span id="detailRole" class="inline-block bg-purple-700 text-white px-2 py-0.5 rounded text-[9px] mt-1">HERÓI</span>
+          </div>
+        </div>
+
+        <div class="space-y-1 font-gb text-[9px]">
+          <div class="flex justify-between"><span>ATQ (Força):</span><span id="statStr">0/10</span></div>
+          <div class="w-full bg-slate-300 h-2 rounded"><div id="barStr" class="bg-red-600 h-full w-0"></div></div>
+
+          <div class="flex justify-between"><span>VEL (Iniciativa):</span><span id="statAgi">0/10</span></div>
+          <div class="w-full bg-slate-300 h-2 rounded"><div id="barAgi" class="bg-yellow-500 h-full w-0"></div></div>
+
+          <div class="flex justify-between"><span>DEF (Resistência):</span><span id="statRes">0/10</span></div>
+          <div class="w-full bg-slate-300 h-2 rounded"><div id="barRes" class="bg-blue-600 h-full w-0"></div></div>
+        </div>
+
+        <div class="space-y-1 bg-white p-2 rounded border border-slate-400 text-[9px]">
+          <div class="font-bold text-blue-800 mb-1">MOVIMENTOS PRINCIPAIS:</div>
+          <div><strong id="skill1Name">-</strong>: <span id="skill1Desc" class="text-slate-600">-</span></div>
+          <div><strong id="skill2Name">-</strong>: <span id="skill2Desc" class="text-slate-600">-</span></div>
+          <div><strong id="skill3Name">-</strong>: <span id="skill3Desc" class="text-slate-600">-</span></div>
+        </div>
+      </div>
+
+      <div class="flex justify-between items-center pt-1 font-gb text-[10px]">
+        <button onclick="showMainMenu()" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded">CANCELAR</button>
+        <button id="confirmSelectBtn" onclick="confirmCharacterChoice()" class="bg-green-600 hover:bg-green-500 text-white font-bold px-6 py-2 rounded border-2 border-black shadow">
+          CONFIRMAR COMBATENTE
+        </button>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TELA 4: ARENA DE BATALHA POKÉMON FIRE RED STYLE -->
+    <!-- =================================================================== -->
+    <section id="screenBattle" class="hidden w-full max-w-4xl flex flex-col items-center">
+      
+      <!-- ARENA VIEWPORT DE BATALHA (CAMPO DE JOGO GBA) -->
+      <div id="battleArenaViewport" class="relative w-full h-[320px] sm:h-[380px] rounded-t-xl border-t-4 border-x-4 border-slate-800 overflow-hidden shadow-2xl bg-cover bg-center transition-all duration-500" style="background-image: url('cenario.jpg');">
+        
+        <!-- INIMIGO (CANTO SUPERIOR DIREITO) -->
+        <div id="enemyContainer" class="absolute top-4 right-4 sm:right-12 flex flex-col items-end z-20 w-52 sm:w-64">
+          
+          <!-- HUD do Inimigo (Estilo FireRed GBA) -->
+          <div class="gba-hud-box p-2 w-full mb-1 text-[10px] font-gb">
+            <div class="flex justify-between items-center mb-1">
+              <span id="enemyName" class="font-bold uppercase text-slate-900 truncate max-w-[110px]">SLADE</span>
+              <span id="enemyLevel" class="text-[9px] text-slate-700">Lv.50</span>
+            </div>
+            
+            <!-- Barra de HP do Inimigo -->
+            <div class="flex items-center gap-1 bg-slate-800 p-1 rounded border border-slate-600">
+              <span class="text-[8px] font-bold text-yellow-400">HP</span>
+              <div class="flex-grow bg-slate-950 h-2.5 rounded overflow-hidden p-0.5">
+                <div id="enemyHpBar" class="hp-bar-fill bg-green-500 h-full w-full rounded-sm"></div>
+              </div>
+            </div>
+            
+            <div id="enemyStatusBadge" class="hidden mt-1 text-[8px] text-red-600 font-bold">STUNNED</div>
+          </div>
+
+          <!-- Plataforma / Pedestal do Inimigo -->
+          <div class="relative flex justify-center items-center w-36 h-12 mt-2">
+            <div class="battle-base-enemy absolute w-full h-full inset-0"></div>
+            <!-- Sprite do Inimigo -->
+            <img id="enemySprite" src="" class="enemy-sprite-view w-24 h-24 sm:w-28 sm:h-28 object-contain relative z-10 bottom-6" alt="Enemy">
+          </div>
+        </div>
+
+        <!-- ALIADO / PLAYER 1 (CANTO INFERIOR ESQUERDO) -->
+        <div id="allyContainer" class="absolute bottom-2 left-4 sm:left-12 flex flex-col items-start z-20 w-56 sm:w-64">
+          
+          <!-- Plataforma / Pedestal do Aliado -->
+          <div class="relative flex justify-center items-center w-40 h-14 mb-1">
+            <div class="battle-base-ally absolute w-full h-full inset-0"></div>
+            <!-- Sprite do Aliado (Vista de costas/espelhada) -->
+            <img id="allySprite" src="" class="ally-sprite-view w-28 h-28 sm:w-32 sm:h-32 object-contain relative z-10 bottom-8" alt="Ally">
+          </div>
+
+          <!-- HUD do Aliado (Estilo FireRed GBA) -->
+          <div class="gba-hud-box p-2 w-full text-[10px] font-gb">
+            <div class="flex justify-between items-center mb-1">
+              <span id="allyName" class="font-bold uppercase text-slate-900 truncate max-w-[120px]">ROBIN</span>
+              <span id="allyLevel" class="text-[9px] text-slate-700">Lv.50</span>
+            </div>
+            
+            <!-- Barra de HP do Aliado -->
+            <div class="flex items-center gap-1 bg-slate-800 p-1 rounded border border-slate-600">
+              <span class="text-[8px] font-bold text-yellow-400">HP</span>
+              <div class="flex-grow bg-slate-950 h-2.5 rounded overflow-hidden p-0.5">
+                <div id="allyHpBar" class="hp-bar-fill bg-green-500 h-full w-full rounded-sm"></div>
+              </div>
+            </div>
+            
+            <div class="flex justify-between items-center mt-1 text-[8px] text-slate-800">
+              <span id="allyHpText">100/100</span>
+              <span id="allyStatusBadge" class="hidden text-blue-700 font-bold">BUFF</span>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- =================================================================== -->
+      <!-- CAIXA DE COMANDOS INFERIOR (BOTTOM COMMAND BOX FIRERED) -->
+      <!-- =================================================================== -->
+      <div class="w-full gba-window p-3 rounded-b-xl border-x-4 border-b-4 border-slate-800 font-gb">
+        
+        <!-- MODO 1: MENU PRINCIPAL DE AÇÕES (DIÁLOGO + GRID 2x2 DE BOTÕES) -->
+        <div id="boxMainMenu" class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center min-h-[100px]">
+          
+          <!-- Lado Esquerdo: Texto de Diálogo com efeito de digitação -->
+          <div class="md:col-span-7 bg-white border-2 border-slate-600 p-3 rounded h-full flex items-center min-h-[60px]">
+            <p id="dialogueText" class="text-[11px] text-slate-900 leading-relaxed">
+              O que Robin vai fazer?
+            </p>
+          </div>
+
+          <!-- Lado Direito: Grid 2x2 de Botões no estilo Pokémon FireRed -->
+          <div class="md:col-span-5 grid grid-cols-2 gap-2 text-[10px]">
+            <button onclick="openMovesMenu()" class="bg-red-600 hover:bg-red-500 text-white font-bold p-3 rounded border-2 border-red-800 shadow transition active:translate-y-0.5 flex justify-center items-center">
+              LUTAR
+            </button>
+            <button onclick="showInfoModal()" class="bg-blue-600 hover:bg-blue-500 text-white font-bold p-3 rounded border-2 border-blue-800 shadow transition active:translate-y-0.5 flex justify-center items-center">
+              INFO
+            </button>
+            <button onclick="useSpecialMoveDirect()" class="bg-purple-600 hover:bg-purple-500 text-white font-bold p-3 rounded border-2 border-purple-800 shadow transition active:translate-y-0.5 flex justify-center items-center">
+              ESPECIAL
+            </button>
+            <button onclick="passTurnAction()" class="bg-slate-600 hover:bg-slate-500 text-white font-bold p-3 rounded border-2 border-slate-800 shadow transition active:translate-y-0.5 flex justify-center items-center">
+              PASSAR
+            </button>
+          </div>
+
+        </div>
+
+        <!-- MODO 2: MENU DE SELEÇÃO DE MOVIMENTOS / SKILLS (LUTAR EXPANDIDO) -->
+        <div id="boxMovesMenu" class="hidden grid grid-cols-1 md:grid-cols-12 gap-3 items-center min-h-[100px]">
+          
+          <!-- Lado Esquerdo: Grid 2x2 dos 4 Movimentos do Personagem -->
+          <div class="md:col-span-8 grid grid-cols-2 gap-2 text-[9px]">
+            <button id="moveBtn0" onclick="executeSelectedMove(0)" class="bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold p-2.5 rounded border-2 border-slate-500 text-left transition truncate">
+              -
+            </button>
+            <button id="moveBtn1" onclick="executeSelectedMove(1)" class="bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold p-2.5 rounded border-2 border-slate-500 text-left transition truncate">
+              -
+            </button>
+            <button id="moveBtn2" onclick="executeSelectedMove(2)" class="bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold p-2.5 rounded border-2 border-slate-500 text-left transition truncate">
+              -
+            </button>
+            <button id="moveBtn3" onclick="executeSelectedMove(3)" class="bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold p-2.5 rounded border-2 border-slate-500 text-left transition truncate">
+              -
+            </button>
+          </div>
+
+          <!-- Lado Direito: Detalhes do Movimento Hover/Selecionado & Botão Voltar -->
+          <div class="md:col-span-4 bg-yellow-100 border-2 border-yellow-600 p-2 rounded text-[9px] text-slate-900 flex flex-col justify-between h-full min-h-[70px]">
+            <div>
+              <div class="flex justify-between font-bold border-b border-yellow-400 pb-1 mb-1">
+                <span>TIPO: <span id="moveTypeLabel" class="text-red-700">FÍSICO</span></span>
+                <span>PP: <span id="movePpLabel">10/10</span></span>
+              </div>
+              <p id="moveDescLabel" class="text-[8px] text-slate-700 leading-tight">Selecione um ataque para visualizar os detalhes.</p>
+            </div>
+            <button onclick="closeMovesMenu()" class="mt-2 bg-slate-700 hover:bg-slate-600 text-white font-bold p-1 rounded text-center text-[8px]">
+              VOLTAR (CANCELAR)
+            </button>
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TELA 5: MODAL DE VITÓRIA / RESULTADO -->
+    <!-- =================================================================== -->
+    <section id="screenResult" class="hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+      <div class="gba-window-dark p-6 max-w-md w-full text-center space-y-4 font-gb">
+        <h2 id="resultTitle" class="text-2xl text-yellow-400 drop-shadow">VITÓRIA!</h2>
+        
+        <div class="w-24 h-24 mx-auto bg-slate-950 p-1 rounded border-2 border-yellow-400">
+          <img id="resultWinnerImg" src="" class="w-full h-full object-cover rounded" alt="Winner">
+        </div>
+
+        <p id="resultSubtitle" class="text-xs text-cyan-300">Você venceu a batalha!</p>
+        <p id="resultDesc" class="text-[10px] text-slate-300 bg-slate-950 p-3 rounded border border-slate-800 leading-relaxed">
+          O Mestre dos Jogos foi derrotado.
+        </p>
+
+        <button id="btnResultContinue" onclick="handleResultContinue()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold p-3 rounded border-2 border-black text-xs">
+          CONTINUAR
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- RODAPÉ -->
+  <footer class="relative z-10 bg-slate-900 border-t-2 border-slate-800 p-2 text-center text-[9px] text-slate-500 font-gb">
+    JOVENS TITÃS • FIRERED RPG EDITION • 2026
+  </footer>
+
+  <!-- LÓGICA COMPLETA EM JAVASCRIPT VANILLA -->
+  <script>
+    /* ==========================================================================
+       1. BANCO DE DADOS DOS PERSONAGENS E MOVIMENTOS (ESTILO FIRERED)
+       ========================================================================== */
+    const CHARACTERS_DATA = {
+      // HERÓIS TITÃS
+      robin: {
+        id: 'robin',
+        name: 'Robin',
+        role: 'Herói',
+        img: 'robin.jpg',
+        str: 7, agi: 9, res: 6, pow: 6,
+        moves: [
+          { name: 'Batarangue', type: 'FÍSICO', power: 22, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arremesso rápido de lâminas de projétil.' },
+          { name: 'Bastão Bo', type: 'TÁTICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Golpe contundente com bastão retrátil.' },
+          { name: 'Acrobacia', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Esquiva ágil aumentando a taxa de crítico.' },
+          { name: 'Golpe Final', type: 'ESPECIAL', power: 55, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Sequência de golpes táticos devastadores.' }
+        ]
+      },
+      cyborg: {
+        id: 'cyborg',
+        name: 'Ciborgue',
+        role: 'Herói',
+        img: 'cyborg.jpg',
+        str: 9, agi: 5, res: 9, pow: 8,
+        moves: [
+          { name: 'Soco de Aço', type: 'FÍSICO', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Soco potente revestido de titânio.' },
+          { name: 'Canhão Laser', type: 'ENERGIA', power: 35, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Disparo de feixe de energia concentrada.' },
+          { name: 'Blindagem', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Reforça a carcaça de metal reduzindo dano.' },
+          { name: 'Canhão Sônico', type: 'ESPECIAL', power: 58, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Disparo sônico máximo de concussão.' }
+        ]
+      },
+      estelar: {
+        id: 'estelar',
+        name: 'Estelar',
+        role: 'Herói',
+        img: 'estelar.jpg',
+        str: 8, agi: 7, res: 7, pow: 9,
+        moves: [
+          { name: 'Starbolt', type: 'ENERGIA', power: 24, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Esferas verticais de energia verde ultravioleta.' },
+          { name: 'Voo Rasante', type: 'FÍSICO', power: 30, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Investida aérea em alta velocidade.' },
+          { name: 'Carga Solar', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Absorve radiação para restaurar HP.' },
+          { name: 'Nova Tamaranea', type: 'ESPECIAL', power: 60, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Explosão omnidirecional de energia solar.' }
+        ]
+      },
+      ravena: {
+        id: 'ravena',
+        name: 'Ravena',
+        role: 'Herói',
+        img: 'ravena.jpg',
+        str: 5, agi: 6, res: 6, pow: 10,
+        moves: [
+          { name: 'Garra de Sombra', type: 'MAGIA', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeção sombria em forma de garras.' },
+          { name: 'Telecinese', type: 'MAGIA', power: 34, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Arremessa escombros contra o oponente.' },
+          { name: 'Escudo Sombrio', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura HP canalizando energia negra.' },
+          { name: 'Azarath Metrion', type: 'ESPECIAL', power: 62, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Encantação ancestral que consome o alvo.' }
+        ]
+      },
+      mutano: {
+        id: 'mutano',
+        name: 'Mutano',
+        role: 'Herói',
+        img: 'mutano.jpg',
+        str: 7, agi: 8, res: 7, pow: 6,
+        moves: [
+          { name: 'Gato Rápido', type: 'FÍSICO', power: 20, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arranhão veloz em forma de felino.' },
+          { name: 'Gorila Pisotão', type: 'FÍSICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Pisotão pesado causando grande impacto.' },
+          { name: 'Forma Tatu', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Aumenta consideravelmente a defesa.' },
+          { name: 'Ataque T-Rex', type: 'ESPECIAL', power: 56, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Mordida devastadora de dinossauro.' }
+        ]
+      },
+      besouro: {
+        id: 'besouro',
+        name: 'Besouro Azul',
+        role: 'Herói',
+        img: 'besouro azul.png',
+        str: 8, agi: 7, res: 8, pow: 8,
+        moves: [
+          { name: 'Lâmina Escaravelho', type: 'FÍSICO', power: 23, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Corte rápido com espadas alienígenas.' },
+          { name: 'Disparo Plasma', type: 'ENERGIA', power: 33, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Tiro de plasma energizado.' },
+          { name: 'Escudo Alien', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Ativa barreira do escaravelho.' },
+          { name: 'Canhão Supremo', type: 'ESPECIAL', power: 58, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Ataque total de artilharia alienígena.' }
+        ]
+      },
+
+      // VILÕES DA ARENA
+      terra: {
+        id: 'terra',
+        name: 'Terra',
+        role: 'Vilão',
+        img: 'terra.png',
+        str: 7, agi: 6, res: 7, pow: 8,
+        moves: [
+          { name: 'Pedra Voadora', type: 'FÍSICO', power: 22, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta rochas contra o oponente.' },
+          { name: 'Terremoto', type: 'TÁTICO', power: 35, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Treme o solo causando grande dano.' },
+          { name: 'Muralha de Pedra', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Ergue barreiras rochosas.' },
+          { name: 'Meteoro Terrestre', type: 'ESPECIAL', power: 55, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Esmaga o inimigo com pedra gigante.' }
+        ]
+      },
+      redx: {
+        id: 'redx',
+        name: 'Red X',
+        role: 'Vilão',
+        img: 'red x.png',
+        str: 8, agi: 10, res: 6, pow: 7,
+        moves: [
+          { name: 'X-Shuriken', type: 'FÍSICO', power: 24, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de lâminas em formato X.' },
+          { name: 'Corte Vermelho', type: 'TÁTICO', power: 34, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque acrobático surpresa.' },
+          { name: 'Teleporte X', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Aumenta a velocidade de esquiva.' },
+          { name: 'Aniquilação X', type: 'ESPECIAL', power: 57, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Sequência veloz e mortal de disparos.' }
+        ]
+      },
+      blackfire: {
+        id: 'blackfire',
+        name: 'Estrela Negra',
+        role: 'Vilão',
+        img: 'estrela negra.png',
+        str: 8, agi: 8, res: 7, pow: 9,
+        moves: [
+          { name: 'Raio Violeta', type: 'ENERGIA', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de energia negra purpúrea.' },
+          { name: 'Golpe Sombrio', type: 'FÍSICO', power: 33, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Investida cósmica pesada.' },
+          { name: 'Absorção Solar', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura vida absorvendo energia.' },
+          { name: 'Supernova Negra', type: 'ESPECIAL', power: 59, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Explosão roxa devastadora.' }
+        ]
+      },
+      sangue: {
+        id: 'sangue',
+        name: 'Irmão Sangue',
+        role: 'Vilão',
+        img: 'irmão sangue.png',
+        str: 7, agi: 6, res: 8, pow: 9,
+        moves: [
+          { name: 'Onda Psíquica', type: 'MAGIA', power: 23, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Ataque mental direto.' },
+          { name: 'Dreno de Vida', type: 'MAGIA', power: 30, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Danos no inimigo convertidos em HP.' },
+          { name: 'Controle Mental', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Confunde o oponente.' },
+          { name: 'Esmagamento Psíquico', type: 'ESPECIAL', power: 56, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Ataque mental omnidirecional.' }
+        ]
+      },
+      slade: {
+        id: 'slade',
+        name: 'Slade',
+        role: 'Vilão',
+        img: 'slade.png',
+        str: 9, agi: 9, res: 8, pow: 7,
+        moves: [
+          { name: 'Golpe de Espada', type: 'FÍSICO', power: 26, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Corte cirúrgico de combate.' },
+          { name: 'Bomba de Fumaça', type: 'TÁTICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque furtivo cegante.' },
+          { name: 'Mestre Estrategista', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Aumenta a defesa analítica.' },
+          { name: 'Execução Mortal', type: 'ESPECIAL', power: 61, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Combo letal ininterrupto.' }
+        ]
+      },
+      trigon: {
+        id: 'trigon',
+        name: 'Trigon',
+        role: 'Vilão',
+        img: 'trigon.png',
+        str: 10, agi: 5, res: 10, pow: 10,
+        moves: [
+          { name: 'Chama Infernal', type: 'MAGIA', power: 28, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta fogo demoníaco.' },
+          { name: 'Laser dos Quatro Olhos', type: 'ENERGIA', power: 38, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Feixe de energia destrutivo.' },
+          { name: 'Poder Demoníaco', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Recupera forças do submundo.' },
+          { name: 'Apocalipse', type: 'ESPECIAL', power: 65, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Destruição total da arena.' }
+        ]
+      },
+      master: {
+        id: 'master',
+        name: 'Mestre dos Jogos',
+        role: 'Chefe',
+        img: 'mestre dos jogos.png',
+        str: 9, agi: 8, res: 9, pow: 10,
+        moves: [
+          { name: 'Raio Amuleto', type: 'ENERGIA', power: 26, ppMax: 20, ppCurr: 20, category: 'atk', desc: 'Disparo de energia do amuleto.' },
+          { name: 'Roubo de Poder', type: 'TÁTICO', power: 36, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Absorve atributos do oponente.' },
+          { name: 'Recarga Dimensional', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura HP usando a arena.' },
+          { name: 'Aniquilação da Arena', type: 'ESPECIAL', power: 64, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Golpe supremo absorvido de todos.' }
+        ]
+      }
+    };
+
+    // Ordem da Campanha PVE
+    const PVE_ORDER = ['terra', 'redx', 'blackfire', 'sangue', 'slade', 'trigon', 'master'];
+
+    /* ==========================================================================
+       2. CANVAS FALLBACK AVATAR GENERATOR
+       ========================================================================== */
+    function createFallbackAvatar(name, colorHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 160; canvas.height = 160;
+      const ctx = canvas.getContext('2d');
+
+      const grad = ctx.createLinearGradient(0, 0, 160, 160);
+      grad.addColorStop(0, '#0f172a'); grad.addColorStop(1, colorHex);
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, 160, 160);
+
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 16px "Press Start 2P"';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(name.substring(0, 6).toUpperCase(), 80, 80);
+
+      return canvas.toDataURL();
+    }
+
+    /* ==========================================================================
+       3. SINTETIZADOR DE ÁUDIO 8-BIT / 16-BIT (WEB AUDIO API RETRÔ)
+       ========================================================================== */
+    let audioCtx = null;
+    let audioEnabled = true;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const text = document.getElementById('audioStatusText');
+      text.innerText = audioEnabled ? 'SOM: ON' : 'SOM: OFF';
+      if (audioEnabled) playSound('select');
+    }
+
+    function playSound(type) {
+      if (!audioEnabled) return;
+      initAudio();
+      if (!audioCtx) return;
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain); gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'select') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(440, now);
+        osc.frequency.setValueAtTime(880, now + 0.05);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+        osc.start(now); osc.stop(now + 0.1);
+      } else if (type === 'hit') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.exponentialRampToValueAtTime(30, now + 0.15);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now); osc.stop(now + 0.15);
+      } else if (type === 'crit') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(200, now);
+        osc.frequency.setValueAtTime(400, now + 0.08);
+        osc.frequency.setValueAtTime(800, now + 0.16);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now); osc.stop(now + 0.25);
+      } else if (type === 'heal') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(600, now + 0.2);
+        gain.gain.setValueAtTime(0.2, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.2);
+        osc.start(now); osc.stop(now + 0.2);
+      } else if (type === 'faint') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(300, now);
+        osc.frequency.linearRampToValueAtTime(80, now + 0.4);
+        gain.gain.setValueAtTime(0.3, now);
+        gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now); osc.stop(now + 0.4);
+      }
+    }
+
+    /* ==========================================================================
+       4. ESTADO DO JOGO E COMBATENTES
+       ========================================================================== */
+    let gameState = {
+      mode: 'pve',
+      currentTab: 'heroes',
+      pveStepIndex: 0,
+      storyStep: 0,
+      selectedP1Key: 'robin',
+      selectedP2Key: 'slade',
+      p1: null,
+      p2: null,
+      turnKey: 'p1', // 'p1' ou 'p2'
+      isBossPhase2: false,
+      isTypingText: false
+    };
+
+    function createCombatant(charKey, isPlayerControlled = true) {
+      const base = CHARACTERS_DATA[charKey];
+      const maxHp = 180 + (base.res * 12);
+      
+      // Clona movimentos com PP independente
+      const clonedMoves = base.moves.map(m => ({
+        ...m,
+        ppCurr: m.ppMax
+      }));
+
+      return {
+        ...base,
+        isPlayer: isPlayerControlled,
+        maxHp: maxHp,
+        currentHp: maxHp,
+        atk: 14 + (base.str * 2.5) + (base.pow * 1.5),
+        def: base.res * 1.5,
+        spd: base.agi,
+        critRate: 0.05 + (base.agi * 0.02),
+        moves: clonedMoves,
+        buffs: { defBonus: 0, critBonus: 0, isStunned: false }
+      };
+    }
+
+    /* ==========================================================================
+       5. NAVEGAÇÃO DE TELAS & TRANSIÇÃO DE BATALHA
+       ========================================================================== */
+    function showScreen(screenId) {
+      document.querySelectorAll('main > section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(screenId).classList.remove('hidden');
+      playSound('select');
+    }
+
+    function showMainMenu() {
+      showScreen('screenMenu');
+    }
+
+    function startMode(mode) {
+      gameState.mode = mode;
+      if (mode === 'pve') {
+        gameState.pveStepIndex = 0;
+        showStoryOpening();
+      } else {
+        gameState.selectedP1Key = 'robin';
+        gameState.selectedP2Key = 'slade';
+        openCharSelection('p1');
+      }
+    }
+
+    function triggerBattleTransition(callback) {
+      const overlay = document.getElementById('transitionOverlay');
+      overlay.classList.add('active');
+      playSound('select');
+      setTimeout(() => {
+        if (callback) callback();
+      }, 400);
+      setTimeout(() => {
+        overlay.classList.remove('active');
+      }, 850);
+    }
+
+    /* ==========================================================================
+       6. HISTÓRIA PVE
+       ========================================================================== */
+    const STORY_DIALOGUES = [
+      { speaker: 'Mestre dos Jogos', img: CHARACTERS_DATA.master.img, text: 'Bem-vindos à Arena Supreme! O torneio Pokémon Titãs começou!' },
+      { speaker: 'Robin', img: CHARACTERS_DATA.robin.img, text: 'Ele quer absorver nossa energia de combate! Titãs, em ação!' },
+      { speaker: 'Slade', img: CHARACTERS_DATA.slade.png, text: 'Vou esmagar qualquer um que entrar no meu caminho.' }
+    ];
+
+    function showStoryOpening() {
+      gameState.storyStep = 0;
+      updateStoryDialogue();
+      showScreen('screenStory');
+    }
+
+    function updateStoryDialogue() {
+      const step = STORY_DIALOGUES[gameState.storyStep];
+      document.getElementById('storySpeakerName').innerText = step.speaker;
+      document.getElementById('storySpeakerImg').src = step.img;
+      document.getElementById('storyText').innerText = `"${step.text}"`;
+    }
+
+    function nextStoryStep() {
+      gameState.storyStep++;
+      if (gameState.storyStep < STORY_DIALOGUES.length) {
+        updateStoryDialogue();
+        playSound('select');
+      } else {
+        openCharSelection('p1_pve');
+      }
+    }
+
+    /* ==========================================================================
+       7. SELEÇÃO DE PERSONAGENS
+       ========================================================================== */
+    let currentSelectionTarget = 'p1';
+
+    function openCharSelection(target) {
+      currentSelectionTarget = target;
+      const titleEl = document.getElementById('selectTitle');
+      const subTitleEl = document.getElementById('selectSubtitle');
+
+      if (target === 'p1_pve') {
+        titleEl.innerText = 'ESCOLHA SEU HEROI (PVE)';
+        subTitleEl.innerText = 'Enfrente os vilões no estilo Pokémon FireRed';
+        switchCharTab('heroes');
+      } else if (target === 'p1') {
+        titleEl.innerText = 'JOGADOR 1: ESCOLHA SEU COMBATENTE';
+        subTitleEl.innerText = 'Selecione quem entra primeiro na arena';
+        switchCharTab('heroes');
+      } else {
+        titleEl.innerText = 'JOGADOR 2: ESCOLHA SEU COMBATENTE';
+        subTitleEl.innerText = 'Selecione o oponente do Jogador 1';
+        switchCharTab('villains');
+      }
+
+      renderCharGrid();
+      selectCharForPreview((gameState.currentTab === 'heroes') ? 'robin' : 'slade');
+      showScreen('screenSelect');
+    }
+
+    function switchCharTab(tab) {
+      gameState.currentTab = tab;
+      const hBtn = document.getElementById('tabHeroesBtn');
+      const vBtn = document.getElementById('tabVillainsBtn');
+
+      if (tab === 'heroes') {
+        hBtn.className = "px-3 py-2 rounded-t bg-yellow-500 text-black border-2 border-black font-bold";
+        vBtn.className = "px-3 py-2 rounded-t bg-slate-800 text-slate-400 border-2 border-slate-700";
+      } else {
+        vBtn.className = "px-3 py-2 rounded-t bg-red-600 text-white border-2 border-black font-bold";
+        hBtn.className = "px-3 py-2 rounded-t bg-slate-800 text-slate-400 border-2 border-slate-700";
+      }
+      renderCharGrid();
+      playSound('select');
+    }
+
+    function renderCharGrid() {
+      const grid = document.getElementById('charGrid');
+      grid.innerHTML = '';
+
+      Object.keys(CHARACTERS_DATA).forEach(key => {
+        const char = CHARACTERS_DATA[key];
+        if (char.id === 'master') return;
+
+        const isHero = char.role === 'Herói';
+        if ((gameState.currentTab === 'heroes' && !isHero) || (gameState.currentTab === 'villains' && isHero)) return;
+
+        const card = document.createElement('div');
+        card.className = `cursor-pointer bg-slate-900 border-2 border-slate-700 hover:border-yellow-400 p-2 rounded flex flex-col items-center gap-1 transition`;
+        card.onclick = () => selectCharForPreview(key);
+
+        card.innerHTML = `
+          <img src="${char.img}" class="w-12 h-12 object-cover rounded border border-slate-700" alt="${char.name}">
+          <span class="font-gb text-[8px] text-center text-slate-200 truncate w-full">${char.name}</span>
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    let currentlyPreviewedKey = 'robin';
+
+    function selectCharForPreview(key) {
+      currentlyPreviewedKey = key;
+      const char = CHARACTERS_DATA[key];
+
+      document.getElementById('detailName').innerText = char.name;
+      document.getElementById('detailRole').innerText = char.role.toUpperCase();
+      document.getElementById('detailImg').src = char.img;
+
+      document.getElementById('statStr').innerText = `${char.str}/10`;
+      document.getElementById('barStr').style.width = `${char.str * 10}%`;
+
+      document.getElementById('statAgi').innerText = `${char.agi}/10`;
+      document.getElementById('barAgi').style.width = `${char.agi * 10}%`;
+
+      document.getElementById('statRes').innerText = `${char.res}/10`;
+      document.getElementById('barRes').style.width = `${char.res * 10}%`;
+
+      document.getElementById('skill1Name').innerText = char.moves[0].name;
+      document.getElementById('skill1Desc').innerText = char.moves[0].desc;
+
+      document.getElementById('skill2Name').innerText = char.moves[1].name;
+      document.getElementById('skill2Desc').innerText = char.moves[1].desc;
+
+      document.getElementById('skill3Name').innerText = char.moves[3].name;
+      document.getElementById('skill3Desc').innerText = char.moves[3].desc;
+
+      playSound('select');
+    }
+
+    function confirmCharacterChoice() {
+      if (currentSelectionTarget === 'p1_pve') {
+        gameState.selectedP1Key = currentlyPreviewedKey;
+        startPveBattleSequence();
+      } else if (currentSelectionTarget === 'p1') {
+        gameState.selectedP1Key = currentlyPreviewedKey;
+        openCharSelection('p2');
+      } else if (currentSelectionTarget === 'p2') {
+        gameState.selectedP2Key = currentlyPreviewedKey;
+        initBattle();
+      }
+    }
+
+    /* ==========================================================================
+       8. INICIALIZAÇÃO DE COMBATE (POKÉMON FIRERED ARENA)
+       ========================================================================== */
+    function startPveBattleSequence() {
+      const enemyKey = PVE_ORDER[gameState.pveStepIndex];
+      gameState.selectedP2Key = enemyKey;
+      initBattle();
+    }
+
+    function initBattle() {
+      gameState.isBossPhase2 = false;
+
+      // Criação das Instâncias
+      gameState.p1 = createCombatant(gameState.selectedP1Key, true);
+      const isP2Player = (gameState.mode === 'pvp');
+      gameState.p2 = createCombatant(gameState.selectedP2Key, isP2Player);
+
+      // Determina Quem Começa pela Agilidade
+      gameState.turnKey = (gameState.p1.spd >= gameState.p2.spd) ? 'p1' : 'p2';
+
+      triggerBattleTransition(() => {
+        // Atualiza Cenário
+        const viewport = document.getElementById('battleArenaViewport');
+        if (gameState.p2.id === 'master' || gameState.pveStepIndex >= 5) {
+          viewport.style.backgroundImage = "url('cenario 2.jpg')";
+        } else {
+          viewport.style.backgroundImage = "url('cenario.jpg')";
+        }
+
+        // Atualiza Dados da Interface
+        document.getElementById('allyName').innerText = gameState.p1.name;
+        document.getElementById('allySprite').src = gameState.p1.img;
+        
+        document.getElementById('enemyName').innerText = gameState.p2.name;
+        document.getElementById('enemySprite').src = gameState.p2.img;
+
+        // Reseta Animações de Entrada Deslizante
+        const allySprite = document.getElementById('allySprite');
+        const enemySprite = document.getElementById('enemySprite');
+        
+        allySprite.classList.remove('anim-faint', 'anim-slide-in-ally');
+        enemySprite.classList.remove('anim-faint', 'anim-slide-in-enemy');
+        
+        void allySprite.offsetWidth; void enemySprite.offsetWidth;
+        
+        allySprite.classList.add('anim-slide-in-ally');
+        enemySprite.classList.add('anim-slide-in-enemy');
+
+        updateHpBars();
+        closeMovesMenu();
+        showScreen('screenBattle');
+
+        typeWriterText(`Um ${gameState.p2.name} selvagem apareceu! O que ${gameState.p1.name} vai fazer?`, () => {
+          if (gameState.turnKey === 'p2' && !gameState.p2.isPlayer) {
+            setTimeout(executeAiTurn, 800);
+          }
+        });
+      });
+    }
+
+    /* ==========================================================================
+       9. LÓGICA DE BARRA DE HP & EFEITO DE DIGITAÇÃO DE TEXTO
+       ========================================================================== */
+    function updateHpBars() {
+      const p1 = gameState.p1;
+      const p2 = gameState.p2;
+
+      // P1 HP Bar
+      const p1Pct = Math.max(0, (p1.currentHp / p1.maxHp) * 100);
+      const allyHpBar = document.getElementById('allyHpBar');
+      allyHpBar.style.width = `${p1Pct}%`;
+      allyHpBar.className = `hp-bar-fill h-full rounded-sm ${p1Pct > 50 ? 'bg-green-500' : p1Pct > 20 ? 'bg-yellow-500' : 'bg-red-600'}`;
+      document.getElementById('allyHpText').innerText = `${Math.round(p1.currentHp)}/${p1.maxHp}`;
+
+      // P2 HP Bar
+      const p2Pct = Math.max(0, (p2.currentHp / p2.maxHp) * 100);
+      const enemyHpBar = document.getElementById('enemyHpBar');
+      enemyHpBar.style.width = `${p2Pct}%`;
+      enemyHpBar.className = `hp-bar-fill h-full rounded-sm ${p2Pct > 50 ? 'bg-green-500' : p2Pct > 20 ? 'bg-yellow-500' : 'bg-red-600'}`;
+    }
+
+    let typeWriterInterval = null;
+
+    function typeWriterText(text, onComplete) {
+      const el = document.getElementById('dialogueText');
+      el.innerText = '';
+      let i = 0;
+      gameState.isTypingText = true;
+
+      clearInterval(typeWriterInterval);
+      typeWriterInterval = setInterval(() => {
+        el.innerText += text.charAt(i);
+        i++;
+        if (i >= text.length) {
+          clearInterval(typeWriterInterval);
+          gameState.isTypingText = false;
+          if (onComplete) onComplete();
+        }
+      }, 20);
+    }
+
+    /* ==========================================================================
+       10. MENUS DE COMANDO E SELEÇÃO DE MOVIMENTOS (POKÉMON FIRERED)
+       ========================================================================== */
+    function openMovesMenu() {
+      if (gameState.isTypingText) return;
+      
+      const activeUser = (gameState.turnKey === 'p1') ? gameState.p1 : gameState.p2;
+      
+      // Preenche os 4 botões de golpes
+      activeUser.moves.forEach((move, idx) => {
+        const btn = document.getElementById(`moveBtn${idx}`);
+        btn.innerHTML = `${move.name}<br><span class="text-[7px] text-slate-500">PP ${move.ppCurr}/${move.ppMax}</span>`;
+        btn.onmouseenter = () => updateMoveHoverInfo(move);
+        btn.disabled = (move.ppCurr <= 0);
+        btn.style.opacity = (move.ppCurr <= 0) ? '0.4' : '1';
+      });
+
+      updateMoveHoverInfo(activeUser.moves[0]);
+      document.getElementById('boxMainMenu').classList.add('hidden');
+      document.getElementById('boxMovesMenu').classList.remove('hidden');
+      playSound('select');
+    }
+
+    function closeMovesMenu() {
+      document.getElementById('boxMovesMenu').classList.add('hidden');
+      document.getElementById('boxMainMenu').classList.remove('hidden');
+      playSound('select');
+    }
+
+    function updateMoveHoverInfo(move) {
+      document.getElementById('moveTypeLabel').innerText = move.type;
+      document.getElementById('movePpLabel').innerText = `${move.ppCurr}/${move.ppMax}`;
+      document.getElementById('moveDescLabel').innerText = move.desc;
+    }
+
+    function executeSelectedMove(moveIndex) {
+      closeMovesMenu();
+      const attackerKey = gameState.turnKey;
+      const defenderKey = (attackerKey === 'p1') ? 'p2' : 'p1';
+      
+      executeAttack(attackerKey, defenderKey, moveIndex);
+    }
+
+    function useSpecialMoveDirect() {
+      if (gameState.isTypingText) return;
+      openMovesMenu();
+    }
+
+    function passTurnAction() {
+      if (gameState.isTypingText) return;
+      const attacker = gameState[gameState.turnKey];
+      typeWriterText(`${attacker.name} hesitou e passou o turno!`, () => {
+        switchTurn();
+      });
+    }
+
+    function showInfoModal() {
+      const active = gameState[gameState.turnKey];
+      typeWriterText(`${active.name}: HP ${Math.round(active.currentHp)}/${active.maxHp} | DEF +${active.buffs.defBonus}`);
+    }
+
+    /* ==========================================================================
+       11. EXECUÇÃO DE ATAQUES E ANIMAÇÕES ESTILO GBA FIRERED
+       ========================================================================== */
+    function executeAttack(attackerKey, defenderKey, moveIndex) {
+      const attacker = gameState[attackerKey];
+      const defender = gameState[defenderKey];
+      const move = attacker.moves[moveIndex];
+
+      // Gasta PP
+      move.ppCurr = Math.max(0, move.ppCurr - 1);
+
+      // Texto de Início do Golpe
+      typeWriterText(`${attacker.name} usou ${move.name}!`, () => {
+        
+        // Animação de Investida de Ataque
+        const attackerSprite = document.getElementById(`${attackerKey === 'p1' ? 'ally' : 'enemy'}Sprite`);
+        const attackClass = (attackerKey === 'p1') ? 'anim-attack-ally' : 'anim-attack-enemy';
+        attackerSprite.classList.add(attackClass);
+        setTimeout(() => attackerSprite.classList.remove(attackClass), 400);
+
+        // Lógica de Dano e Suporte
+        setTimeout(() => {
+          if (move.category === 'heal') {
+            const healAmt = Math.round(attacker.maxHp * 0.3);
+            attacker.currentHp = Math.min(attacker.maxHp, attacker.currentHp + healAmt);
+            updateHpBars();
+            playSound('heal');
+            showFloatingDmg(attackerKey, `+${healAmt}`, '#22c55e');
+            typeWriterText(`${attacker.name} recuperou vida!`, () => switchTurn());
+            return;
+          }
+
+          if (move.category === 'buff_def') {
+            attacker.buffs.defBonus += 6;
+            playSound('heal');
+            showFloatingDmg(attackerKey, `DEF +`, '#3b82f6');
+            typeWriterText(`A defesa de ${attacker.name} aumentou!`, () => switchTurn());
+            return;
+          }
+
+          if (move.category === 'buff_agi') {
+            attacker.buffs.critBonus += 0.2;
+            playSound('heal');
+            showFloatingDmg(attackerKey, `CRÍTICO +`, '#eab308');
+            typeWriterText(`A precisão de ${attacker.name} aumentou!`, () => switchTurn());
+            return;
+          }
+
+          // Cálculo de Dano Ativo
+          const isCrit = Math.random() < (attacker.critRate + attacker.buffs.critBonus);
+          let rawDmg = (attacker.atk * (move.power / 20));
+          if (isCrit) rawDmg *= 1.5;
+
+          const totalDef = defender.def + defender.buffs.defBonus;
+          const finalDamage = Math.max(4, Math.round(rawDmg - (totalDef * 0.4)));
+
+          defender.currentHp = Math.max(0, defender.currentHp - finalDamage);
+
+          // Animações de Receber Dano (Piscar + Shake)
+          const defenderSprite = document.getElementById(`${defenderKey === 'p1' ? 'ally' : 'enemy'}Sprite`);
+          const viewport = document.getElementById('battleArenaViewport');
+          
+          defenderSprite.classList.add('anim-damage');
+          viewport.classList.add('anim-screen-shake');
+          
+          if (isCrit) playSound('crit'); else playSound('hit');
+
+          showFloatingDmg(defenderKey, `-${finalDamage}${isCrit ? ' CRÍTICO!' : ''}`, isCrit ? '#eab308' : '#ef4444');
+          
+          setTimeout(() => {
+            defenderSprite.classList.remove('anim-damage');
+            viewport.classList.remove('anim-screen-shake');
+            updateHpBars();
+
+            // Checa Transformação Suprema do Mestre dos Jogos
+            if (defender.id === 'master' && !gameState.isBossPhase2 && defender.currentHp <= defender.maxHp * 0.5) {
+              gameState.isBossPhase2 = true;
+              defender.atk += 10;
+              typeWriterText(`⚠️ MESTRE DOS JOGOS ASSUMIU A FORMA SUPREMA! PODER AUMENTADO!`, () => {
+                checkBattleEndOrNext(attackerKey, defenderKey);
+              });
+              return;
+            }
+
+            checkBattleEndOrNext(attackerKey, defenderKey);
+          }, 450);
+
+        }, 300);
+
+      });
+    }
+
+    function checkBattleEndOrNext(attackerKey, defenderKey) {
+      const defender = gameState[defenderKey];
+
+      if (defender.currentHp <= 0) {
+        // Animação de Desmaio / Faint caindo pela plataforma
+        const defenderSprite = document.getElementById(`${defenderKey === 'p1' ? 'ally' : 'enemy'}Sprite`);
+        defenderSprite.classList.add('anim-faint');
+        playSound('faint');
+
+        typeWriterText(`${defender.name} desmaiou!`, () => {
+          setTimeout(() => handleBattleVictory(attackerKey), 600);
+        });
+      } else {
+        switchTurn();
+      }
+    }
+
+    function switchTurn() {
+      gameState.turnKey = (gameState.turnKey === 'p1') ? 'p2' : 'p1';
+
+      if (gameState.turnKey === 'p2' && !gameState.p2.isPlayer) {
+        setTimeout(executeAiTurn, 800);
+      } else {
+        const active = gameState[gameState.turnKey];
+        typeWriterText(`O que ${active.name} vai fazer?`);
+      }
+    }
+
+    /* ==========================================================================
+       12. INTELIGÊNCIA ARTIFICIAL DO INIMIGO (PVE)
+       ========================================================================== */
+    function executeAiTurn() {
+      if (gameState.p2.currentHp <= 0) return;
+
+      const p2 = gameState.p2;
+      let chosenMoveIdx = 0;
+
+      // IA com prioridade de golpe especial ou cura se vida baixa
+      if (p2.currentHp < p2.maxHp * 0.35 && p2.moves[2].ppCurr > 0) {
+        chosenMoveIdx = 2; // Move de cura/suporte
+      } else if (p2.moves[3].ppCurr > 0 && Math.random() < 0.5) {
+        chosenMoveIdx = 3; // Especial
+      } else if (p2.moves[1].ppCurr > 0 && Math.random() < 0.6) {
+        chosenMoveIdx = 1;
+      }
+
+      executeAttack('p2', 'p1', chosenMoveIdx);
+    }
+
+    /* ==========================================================================
+       13. EFEITO DE DANO FLUTUANTE PIXELADO
+       ========================================================================== */
+    function showFloatingDmg(targetKey, text, color) {
+      const container = document.getElementById(`${targetKey === 'p1' ? 'ally' : 'enemy'}Container`);
+      const el = document.createElement('div');
+      el.className = 'pixel-dmg-text';
+      el.style.color = color;
+      el.style.top = '10%';
+      el.style.left = '20%';
+      el.innerText = text;
+
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 1000);
+    }
+
+    /* ==========================================================================
+       14. FIM DE BATALHA E PROGRESSÃO DA HISTÓRIA
+       ========================================================================== */
+    function handleBattleVictory(winnerKey) {
+      const winner = gameState[winnerKey];
+      const isP1Winner = (winnerKey === 'p1');
+
+      const modal = document.getElementById('screenResult');
+      const title = document.getElementById('resultTitle');
+      const sub = document.getElementById('resultSubtitle');
+      const winnerImg = document.getElementById('resultWinnerImg');
+      const desc = document.getElementById('resultDesc');
+
+      winnerImg.src = winner.img;
+
+      if (gameState.mode === 'pvp') {
+        title.innerText = 'VITÓRIA!';
+        sub.innerText = `${winner.name} venceu o Duelo PvP!`;
+        desc.innerText = 'Uma batalha inesquecível na arena!';
+        document.getElementById('btnResultContinue').innerText = 'MENU PRINCIPAL';
+      } else {
+        if (isP1Winner) {
+          gameState.pveStepIndex++;
+          if (gameState.pveStepIndex < PVE_ORDER.length) {
+            title.innerText = 'INIMIGO DERROTADO!';
+            sub.innerText = `${winner.name} venceu o combate!`;
+            desc.innerText = 'Avançando para o próximo vilão da arena...';
+            document.getElementById('btnResultContinue').innerText = 'PRÓXIMA BATALHA';
+          } else {
+            title.innerText = 'CAMPEÃO SUPREMO!';
+            sub.innerText = 'Mestre dos Jogos foi derrotado!';
+            desc.innerText = 'Os Jovens Titãs salvaram Jump City e a arena dimensional! Você completou o jogo!';
+            document.getElementById('btnResultContinue').innerText = 'FINALIZAR';
+          }
+        } else {
+          title.innerText = 'VOCÊ DESMAIOU!';
+          sub.innerText = `${gameState.p1.name} perdeu todos os HP!`;
+          desc.innerText = 'O Mestre dos Jogos absorveu seus poderes. Tente novamente!';
+          document.getElementById('btnResultContinue').innerText = 'REINICIAR BATALHA';
+        }
+      }
+
+      modal.classList.remove('hidden');
+    }
+
+    function handleResultContinue() {
+      document.getElementById('screenResult').classList.add('hidden');
+
+      if (gameState.mode === 'pvp') {
+        showMainMenu();
+      } else {
+        if (gameState.p1.currentHp <= 0) {
+          startPveBattleSequence();
+        } else if (gameState.pveStepIndex < PVE_ORDER.length) {
+          startPveBattleSequence();
+        } else {
+          showMainMenu();
+        }
+      }
+    }
+
+    /* ==========================================================================
+       15. INICIALIZAÇÃO
+       ========================================================================== */
+    window.onload = function() {
+      lucide.createIcons();
+    };
+  </script>
+</body>
+</html>

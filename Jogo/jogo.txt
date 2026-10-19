@@ -1,0 +1,169 @@
+
+Equipe: João E., Luiz, Gutierrez, Albert
+
+Crie um jogo de RPG de turnos, bem simples mas muito bonito.
+HTML, CSS e JS vanilla, tudo em um único arquivo HTML.
+Identidade visual bonita. Animações e efeitos modernos e de acordo com o universo do game.
+
+atributos de cada boneco:
+vida
+ataque
+iniciativa
+defesa/armadura
+
+RPG de turno.
+
+Tem PvP x1: dois jogadores, cada um escolhe um boneco.
+Tem PvE, pro jogador treinar as mecânicas de cada boneco.
+
+
+Cada boneco tem Ataques:
+Ataque básico
+Ataque alternativo
+Ataque especial
+Chance de crítico
+
+As mecânicas de jogabilidade devem balancear os bonecos (nenhum muito apelão) e respeitar o universo.
+
+Tem imagem para os bonecos
+
+Insira aqui seu universo: Jovens Titãs
+
+Bonecos:
+-Heróis
+    -Robin
+    -Cyborg
+    -Estelar
+    -Ravena 
+    -Mutano
+
+-Vilões
+    -Terra
+    -Trigon
+    -Slade
+    -Irmão Sangue
+    -Red x
+    -Estrela Negra
+    
+-Final Boss
+    -Mestre dos Jogos
+
+
+
+Atributos
+
+    HERÓIS
+        Robin
+        Força: 4/10 (Humano sem poderes, dependente de artes marciais)
+        Agilidade: 9/10 (Acrobata treinado)
+        Resistência: 5/10 (Resistência humana elevada com armadura leve)
+        Intelecto: 9/10 (Estrategista e tático principal do grupo)
+        Poder: 1/10 (Apenas gadgets e equipamentos)
+
+        Ravena
+        Força: 2/10 (Força física humana normal)
+        Agilidade: 5/10 (Movimentação padrão e voo)
+        Resistência: 5/10 (Depende de escudos místico-energéticos)
+        Intelecto: 8/10 (Conhecimento oculto e autocontrole meditativo)
+        Poder: 10/10 (Magia de energia escura, telecinese e projeção da alma)
+
+        Besouro Azul (Jaime Reyes)
+        Força: 7/10 (Amplificada pela armadura alienígena)
+        Agilidade: 7/10 (Propulsores e asas do escoravelho)
+        Resistência: 8/10 (Exoesqueleto blindado de alta densidade)
+        Intelecto: 6/10 (Conhecimento médio, compensado pela IA do Escoravelho)
+        Poder: 8/10 (Construção de armas de energia, canhões e escudos)
+
+        Mutano
+        Força: 7/10 (Varia conforme o animal; chega a 8/10 em formas grandes)
+        Agilidade: 8/10 (Alta mobilidade como chita, falcão ou inseto)
+        Resistência: 6/10 (Aumenta ao virar animais de pele grossa)
+        Intelecto: 4/10 (Agir por impulso e intuição)
+        Poder: 8/10 (Metamorfose biológica completa em qualquer animal)
+
+        Ciborgue
+        Força: 9/10 (Próteses cibernéticas de altíssima tonelagem)
+        Agilidade: 4/10 (Corpo mecânico pesado)
+        Resistência: 9/10 (Chassi de liga metálica ultra-resistente)
+        Intelecto: 9/10 (Gênio da mecânica, robótica e sistemas digitais)
+        Poder: 6/10 (Canhão sônico integrado e baterias internas)
+
+        Estelar
+        Força: 9/10 (Fisiologia tamaraneana com superforça)
+        Agilidade: 8/10 (Voo em alta velocidade)
+        Resistência: 8/10 (Pele e corpo alienígena de alta durabilidade)
+        Intelecto: 5/10 (Aprendendo sobre a Terra)
+        Poder: 9/10 (Disparo de starbolts e rajadas oculares de energia)
+
+    VILÕES
+
+        Slade
+        Força: 7/10 (Físico aprimorado)
+        Agilidade: 8/10 (Mestre em combate corpo a corpo e esquiva)
+        Resistência: 7/10 (Tolerância à dor e armadura reforçada)
+        Intelecto: 10/10 (Mestre da manipulação mental e estratégia)
+        Poder: 2/10 (Humano aperfeiçoado)
+
+        Trigon
+        Força: 10/10 (Demônio de escala planetária)
+        Agilidade: 3/10 (Pouca mobilidade necessária pelo tamanho e alcance)
+        Resistência: 10/10 (Invulnerável no seu estado real)
+        Intelecto: 9/10 (Entidade milenar manipuladora)
+        Poder: 10/10 (Distorção da realidade, fogo infernal e feitiçaria)
+
+        Irmão Sangue
+        Força: 5/10 (Aumenta após modificações cibernéticas)
+        Agilidade: 5/10 (Deslocamento humano padrão)
+        Resistência: 6/10 (Elevada após virar ciborgue)
+        Intelecto: 9/10 (Líder manipulador e gênio da hipnose)
+        Poder: 8/10 (Controle mental psíquico e telecinese)
+
+        Red X
+        Força: 5/10 (Humano em pico físico)
+        Agilidade: 9/10 (Furtividade e acrobacias no nível do Robin)
+        Resistência: 5/10 (Armadura leve do traje)
+        Intelecto: 8/10 (Excelente improvisador e tático)
+        Poder: 7/10 (Derivado dos circuitos e armas de Xenothium do traje)
+
+        Estrela Negra (Blackfire)
+        Força: 8/10 (Fisiologia tamaraneana)
+        Agilidade: 8/10 (Capacidade de voo e combate aéreo)
+        Resistência: 7/10 (Durabilidade alienígena)
+        Intelecto: 7/10 (Manipulação social e crime intergaláctico)
+        Poder: 9/10 (Starbolts roxos e manipulação de energia alienígena)
+
+        Terra
+        Força: 4/10 (Físico de uma adolescente comum)
+        Agilidade: 6/10 (Movimentação ágil em combate)
+        Resistência: 5/10 (Depende de escudos de rocha para se proteger)
+        Intelecto: 5/10 (Emocionalmente instável e manipulável)
+        Poder: 9/10 (Geocinese total: move montanhas, rochas e causa terremotos)
+
+
+    *Mestre dos jogos*
+        Forma Base (Início do Combate):
+        Força: 5/10 (Ataques físicos moderados com o Cetro)
+        Agilidade: 7/10 (Acrobata de arena e esquiva rápida)
+        Resistência: 7/10 (Protegido por campos de força dimensionais)
+        Intelecto: 10/10 (Gênio tático, manipulador da realidade da arena)
+        Poder: 6/10 (Energia dimensional pura)
+        Forma Suprema (Poderes Absorvidos - Vida abaixo de 50%):
+        Força: 9/10 (Soco de impacto sísmico de Terra)
+        Agilidade: 9/10 (Teletransporte de Xenothium do Red X)
+        Resistência: 9/10 (Escudo de fusão elemental)
+        Intelecto: 10/10 (Previsão de movimentos)
+        Poder: 10/10 (Aceleração com magia infernal de Trigon)
+        ⚔️ Conjunto de Habilidades (Boss Fight)
+
+
+Jovens Titãs: O Último Jogo 
+    O Mestre dos Jogos reúne seis vilões: Slade, Trigon, Irmão Sangue, Terra, Estrela Negra e Red X. Ele promete realizar os maiores desejos de cada um se derrotarem os Jovens Titãs.
+    Slade quer derrotar Robin, Trigon deseja conquistar a Terra, Irmão Sangue quer controlar Jump City, Terra busca poder, Estrela Negra quer vencer sua irmã e Red X deseja roubar uma tecnologia poderosa.
+    O que nenhum deles sabe é que o Mestre dos Jogos está manipulando todos. Seu verdadeiro objetivo é colocar os vilões e os Titãs em batalhas para absorver os poderes dos derrotados e se tornar invencível.
+    Os Jovens Titãs descobrem o plano e entram na dimensão para impedir que isso aconteça.
+    A batalha final: Titãs vs. Mestre dos Jogos
+    Depois de derrotarem seus respectivos inimigos, os Jovens Titãs descobrem que o Mestre dos Jogos estava absorvendo a energia das batalhas para ficar mais poderoso.
+    Ele revela sua verdadeira intenção e desafia os seis Titãs para uma última batalha na arena
+    Quando o Mestre dos Jogos fica enfraquecido, Robin dá o golpe final e o derrota.
+    A arena começa a desmoronar, mas os Titãs conseguem escapar. O Mestre dos Jogos é preso, e os vilões sobreviventes são levados de volta às suas prisões.
+    Final do RPG: os Jovens Titãs comemoram sua vitória na Torre dos Titãs, sabendo que protegeram Jump City mais uma vez.
