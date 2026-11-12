@@ -31,6 +31,9 @@
       letter-spacing: 1px;
     }
 
+    /* Mantém espaços entre as palavras durante o efeito de digitação. */
+    #dialogueText { white-space: pre-wrap; overflow-wrap: anywhere; }
+
     /* BORDAS E ESTILOS CLÁSSICOS DE POKÉMON FIRERED */
     .gba-window {
       background: linear-gradient(180deg, #f8f8f8 0%, #e0e0e0 100%);
@@ -807,7 +810,8 @@
       p2: null,
       turnKey: 'p1', // 'p1' ou 'p2'
       isBossPhase2: false,
-      isTypingText: false
+      isTypingText: false,
+      isActionLocked: false
     };
 
     function createCombatant(charKey, isPlayerControlled = true) {
@@ -1026,6 +1030,9 @@
 
     function initBattle() {
       gameState.isBossPhase2 = false;
+      gameState.isActionLocked = true;
+      clearInterval(typeWriterInterval);
+      gameState.isTypingText = false;
 
       // Criação das Instâncias
       gameState.p1 = createCombatant(gameState.selectedP1Key, true);
@@ -1069,7 +1076,10 @@
 
         typeWriterText(`Um ${gameState.p2.name} selvagem apareceu! O que ${gameState.p1.name} vai fazer?`, () => {
           if (gameState.turnKey === 'p2' && !gameState.p2.isPlayer) {
+            gameState.isActionLocked = true;
             setTimeout(executeAiTurn, 800);
+          } else {
+            gameState.isActionLocked = false;
           }
         });
       });
@@ -1100,30 +1110,34 @@
 
     function typeWriterText(text, onComplete) {
       const el = document.getElementById('dialogueText');
-      el.innerText = '';
+      el.textContent = '';
       let i = 0;
       gameState.isTypingText = true;
 
       clearInterval(typeWriterInterval);
+      el.textContent = '';
       typeWriterInterval = setInterval(() => {
-        el.innerText += text.charAt(i);
+        // textContent preserva os espaços enquanto cada caractere é escrito.
+        el.textContent += text.charAt(i);
         i++;
         if (i >= text.length) {
           clearInterval(typeWriterInterval);
           gameState.isTypingText = false;
           if (onComplete) onComplete();
         }
-      }, 20);
+      }, 35);
     }
 
     /* ==========================================================================
        10. MENUS DE COMANDO E SELEÇÃO DE MOVIMENTOS (POKÉMON FIRERED)
        ========================================================================== */
     function openMovesMenu() {
-      if (gameState.isTypingText) return;
-      
-      const activeUser = (gameState.turnKey === 'p1') ? gameState.p1 : gameState.p2;
-      
+      if (gameState.isTypingText || gameState.isActionLocked) return;
+
+      const activeUser = gameState[gameState.turnKey];
+      // Só o combatente controlado por uma pessoa pode abrir o menu.
+      if (!activeUser || !activeUser.isPlayer) return;
+
       // Preenche os 4 botões de golpes
       activeUser.moves.forEach((move, idx) => {
         const btn = document.getElementById(`moveBtn${idx}`);
@@ -1152,37 +1166,64 @@
     }
 
     function executeSelectedMove(moveIndex) {
-      closeMovesMenu();
+      if (gameState.isTypingText || gameState.isActionLocked) return;
+
       const attackerKey = gameState.turnKey;
+      const attacker = gameState[attackerKey];
+      if (!attacker || !attacker.isPlayer) return;
+
+      const move = attacker.moves[moveIndex];
+      if (!move || move.ppCurr <= 0) return;
+
+      // executeAttack adquire o bloqueio de forma atômica. Como o JavaScript
+      // executa este trecho sem interrupção, cliques seguintes já encontrarão
+      // a ação bloqueada.
       const defenderKey = (attackerKey === 'p1') ? 'p2' : 'p1';
-      
       executeAttack(attackerKey, defenderKey, moveIndex);
+      closeMovesMenu();
     }
 
     function useSpecialMoveDirect() {
-      if (gameState.isTypingText) return;
+      if (gameState.isTypingText || gameState.isActionLocked) return;
       openMovesMenu();
     }
 
     function passTurnAction() {
-      if (gameState.isTypingText) return;
+      if (gameState.isTypingText || gameState.isActionLocked) return;
       const attacker = gameState[gameState.turnKey];
+      if (!attacker || !attacker.isPlayer) return;
+
+      gameState.isActionLocked = true;
       typeWriterText(`${attacker.name} hesitou e passou o turno!`, () => {
         switchTurn();
       });
     }
 
     function showInfoModal() {
+      if (gameState.isTypingText || gameState.isActionLocked) return;
       const active = gameState[gameState.turnKey];
-      typeWriterText(`${active.name}: HP ${Math.round(active.currentHp)}/${active.maxHp} | DEF +${active.buffs.defBonus}`);
+      if (!active || !active.isPlayer) return;
+
+      gameState.isActionLocked = true;
+      typeWriterText(`${active.name}: HP ${Math.round(active.currentHp)}/${active.maxHp} | DEF +${active.buffs.defBonus}`, () => {
+        gameState.isActionLocked = false;
+      });
     }
 
     /* ==========================================================================
        11. EXECUÇÃO DE ATAQUES E ANIMAÇÕES ESTILO GBA FIRERED
        ========================================================================== */
-    function executeAttack(attackerKey, defenderKey, moveIndex) {
+    function executeAttack(attackerKey, defenderKey, moveIndex, isAiAction = false) {
+      // Uma ação em andamento nunca pode ser substituída por outro clique.
+      // A IA recebe autorização explícita porque o turno dela já começa travado.
+      if (gameState.isActionLocked && !isAiAction) return;
+      if (isAiAction && (attackerKey !== 'p2' || gameState.p2.isPlayer)) return;
+      if (gameState.turnKey !== attackerKey) return;
+
       const attacker = gameState[attackerKey];
       const defender = gameState[defenderKey];
+      if (!attacker || !defender || !attacker.moves[moveIndex]) return;
+      gameState.isActionLocked = true;
       const move = attacker.moves[moveIndex];
 
       // Gasta PP
@@ -1290,10 +1331,14 @@
       gameState.turnKey = (gameState.turnKey === 'p1') ? 'p2' : 'p1';
 
       if (gameState.turnKey === 'p2' && !gameState.p2.isPlayer) {
+        gameState.isActionLocked = true;
         setTimeout(executeAiTurn, 800);
       } else {
         const active = gameState[gameState.turnKey];
-        typeWriterText(`O que ${active.name} vai fazer?`);
+        gameState.isActionLocked = true;
+        typeWriterText(`O que ${active.name} vai fazer?`, () => {
+          gameState.isActionLocked = false;
+        });
       }
     }
 
@@ -1301,8 +1346,12 @@
        12. INTELIGÊNCIA ARTIFICIAL DO INIMIGO (PVE)
        ========================================================================== */
     function executeAiTurn() {
-      if (gameState.p2.currentHp <= 0) return;
+      if (gameState.turnKey !== 'p2' || !gameState.p2 || gameState.p2.currentHp <= 0) {
+        gameState.isActionLocked = false;
+        return;
+      }
 
+      gameState.isActionLocked = true;
       const p2 = gameState.p2;
       let chosenMoveIdx = 0;
 
@@ -1315,7 +1364,7 @@
         chosenMoveIdx = 1;
       }
 
-      executeAttack('p2', 'p1', chosenMoveIdx);
+      executeAttack('p2', 'p1', chosenMoveIdx, true);
     }
 
     /* ==========================================================================
