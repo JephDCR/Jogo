@@ -191,6 +191,33 @@
       100% { opacity: 0; transform: translateY(-50px) scale(1); }
     }
 
+    /* Acesso administrativo ao lado do som, sem sobrepor outros controles */
+    .admin-control { position: relative; display: inline-flex; align-items: center; }
+    .admin-secret-btn {
+      position: relative; width: 38px; height: 38px; padding: 0;
+      border: 2px solid #475569; border-radius: 6px;
+      background: #0f172a; color: #94a3b8; font-size: 18px;
+      opacity: .58; cursor: pointer; z-index: 30; touch-action: manipulation;
+      transition: opacity .2s, background .2s, color .2s, border-color .2s;
+    }
+    .admin-secret-btn:hover, .admin-secret-btn:focus-visible {
+      opacity: 1; background: #334155; color: #facc15; border-color: #facc15;
+      outline: 2px solid #facc15; outline-offset: 2px;
+    }
+    .admin-popover {
+      position: absolute; top: calc(100% + 10px); right: 0; width: 250px;
+      z-index: 100; padding: 14px; border: 2px solid #64748b; border-radius: 9px;
+      background: #0f172a; box-shadow: 0 12px 30px #000b; text-align: left;
+    }
+    .admin-popover::before {
+      content: ''; position: absolute; right: 13px; top: -7px; width: 12px; height: 12px;
+      background: #0f172a; border-left: 2px solid #64748b; border-top: 2px solid #64748b; transform: rotate(45deg);
+    }
+
+    /* Epílogo / tela final */
+    @keyframes endingFade { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+    .ending-fade { opacity: 0; animation: endingFade .9s ease forwards; }
+
     /* Custom Scrollbar */
     ::-webkit-scrollbar { width: 6px; }
     ::-webkit-scrollbar-track { background: #1a202c; }
@@ -198,6 +225,16 @@
   </style>
 </head>
 <body class="min-h-screen flex flex-col justify-between relative bg-slate-950 text-slate-100 select-none">
+
+  <!-- Notificação de personagem secreto desbloqueado -->
+  <div id="secretUnlockModal" class="hidden fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="secretUnlockTitle">
+    <div class="w-full max-w-sm bg-slate-900 border-4 border-yellow-400 rounded-xl p-6 text-center shadow-[0_0_35px_rgba(250,204,21,0.35)]">
+      <div class="text-5xl mb-3">🦇</div>
+      <h2 id="secretUnlockTitle" class="font-gb text-sm text-yellow-300 mb-3">PERSONAGEM SECRETO DESBLOQUEADO!</h2>
+      <p class="font-gb text-[10px] text-white mb-5">BATMAN ESTÁ PRONTO PARA ENTRAR NA ARENA.</p>
+      <button type="button" onclick="window.playAsUnlockedBatman()" class="w-full bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-gb font-bold text-xs py-3 px-4 rounded border-2 border-yellow-700 shadow-lg">JOGAR AGORA</button>
+    </div>
+  </div>
 
   <!-- Efeito de Cortina de Transição de Batalha -->
   <div id="transitionOverlay" class="battle-transition-overlay"></div>
@@ -218,6 +255,19 @@
         <i data-lucide="volume-2" class="w-4 h-4"></i>
         <span id="audioStatusText" class="hidden md:inline">SOM: ON</span>
       </button>
+      <div class="admin-control">
+        <button id="adminSecretBtn" type="button" aria-label="Acesso administrativo" title="Painel restrito" class="admin-secret-btn" onclick="window.toggleAdminPanel(event)">⌑</button>
+        <div id="adminPopover" class="admin-popover hidden" onclick="event.stopPropagation()">
+          <p class="font-gb text-[10px] text-yellow-400 mb-2">ACESSO ADMINISTRADOR</p>
+          <label for="adminPasswordInput" class="block text-[10px] text-slate-300 mb-1">Digite a senha para liberar o Batman:</label>
+          <input id="adminPasswordInput" onkeydown="if (event.key === 'Enter') { event.preventDefault(); window.submitAdminPassword(event); }" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Senha de acesso" class="w-full rounded bg-slate-950 border border-slate-600 px-2 py-2 text-sm text-white outline-none focus:border-yellow-400" />
+          <p id="adminLoginMessage" class="text-[10px] text-slate-400 mt-2" aria-live="polite">Acesso restrito.</p>
+          <div class="flex justify-end gap-2 mt-3">
+            <button type="button" onclick="window.closeAdminPanel()" class="text-[10px] px-2 py-1 rounded bg-slate-700 text-white">FECHAR</button>
+            <button type="button" onclick="window.submitAdminPassword(event)" class="text-[10px] px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold">LIBERAR</button>
+          </div>
+        </div>
+      </div>
       <button onclick="showMainMenu()" class="bg-red-700 hover:bg-red-600 text-white p-2 rounded border-2 border-red-500 text-[10px] font-gb flex items-center gap-1">
         <i data-lucide="home" class="w-4 h-4"></i> MENU
       </button>
@@ -257,6 +307,7 @@
           <i data-lucide="users" class="w-5 h-5"></i> DUELO PVP (1v1)
         </button>
       </div>
+      <p id="adminStatus" class="font-gb text-[9px] text-slate-500">Personagem secreto: bloqueado</p>
 
       <div class="text-[10px] text-slate-400 bg-slate-950 p-3 rounded border border-slate-800 text-left leading-relaxed w-full">
         <p class="text-yellow-400 font-bold mb-1">📜 INSTRUÇÕES DO TREINADOR TITÃ:</p>
@@ -272,7 +323,7 @@
         <div class="p-1 bg-yellow-500 text-black rounded">
           <i data-lucide="book-open" class="w-5 h-5"></i>
         </div>
-        <h3 class="font-gb text-xs sm:text-sm text-yellow-400">DESAFIO DA ARENA DIMENSIONAL</h3>
+        <h3 id="storyTitle" class="font-gb text-xs sm:text-sm text-yellow-400">DESAFIO DA ARENA DIMENSIONAL</h3>
       </div>
 
       <div class="gba-window p-4 flex flex-col sm:flex-row gap-4 items-center min-h-[140px]">
@@ -284,11 +335,28 @@
       </div>
 
       <div class="flex justify-between items-center pt-2 font-gb text-[10px]">
-        <button onclick="showMainMenu()" class="text-slate-400 hover:text-white">VOLTAR</button>
+        <button id="storyBackBtn" onclick="storyBack()" class="text-slate-400 hover:text-white">VOLTAR</button>
         <button onclick="nextStoryStep()" class="bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-4 py-2 rounded border-2 border-black font-bold flex items-center gap-1">
           AVANÇAR <i data-lucide="arrow-right" class="w-4 h-4"></i>
         </button>
       </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TELA FINAL: EPÍLOGO APÓS DERROTAR O MESTRE DOS JOGOS -->
+    <!-- =================================================================== -->
+    <section id="screenEnding" class="hidden w-full max-w-2xl gba-window-dark p-4 sm:p-8 flex flex-col items-center gap-5 text-center">
+      <span class="font-gb text-[10px] text-red-400 tracking-widest ending-fade" style="animation-delay:.1s">EPÍLOGO</span>
+      <h2 class="font-gb text-3xl sm:text-5xl text-yellow-400 drop-shadow-[0_4px_0_rgba(0,0,0,1)] ending-fade" style="animation-delay:.4s">FIM</h2>
+      <p class="font-gb text-[10px] sm:text-xs text-cyan-300 leading-relaxed ending-fade" style="animation-delay:.9s">OS JOVENS TITÃS SALVARAM A ARENA DIMENSIONAL!</p>
+      <div id="endingHeroes" class="flex flex-wrap justify-center gap-2 ending-fade" style="animation-delay:1.4s"></div>
+      <div class="gba-window p-4 w-full space-y-2 ending-fade" style="animation-delay:2s">
+        <p class="font-gb text-[10px] leading-relaxed">O Mestre dos Jogos foi derrotado e o torneio chegou ao fim.</p>
+        <p class="font-gb text-[10px] leading-relaxed">Os prisioneiros da arena voltaram para casa em segurança.</p>
+        <p class="font-gb text-[10px] leading-relaxed text-red-700">Trigon foi desbloqueado para os duelos do modo Versus!</p>
+      </div>
+      <p class="font-gb text-[9px] text-slate-400 ending-fade" style="animation-delay:2.6s">OBRIGADO POR JOGAR!</p>
+      <button onclick="finishEnding()" class="font-gb text-xs bg-yellow-500 hover:bg-yellow-400 text-slate-950 px-6 py-3 rounded border-2 border-black font-bold ending-fade" style="animation-delay:3s">MENU PRINCIPAL</button>
     </section>
 
     <!-- =================================================================== -->
@@ -539,8 +607,8 @@
         img: 'robin.png',
         str: 7, agi: 9, res: 6, pow: 6,
         moves: [
-          { name: 'Batarangue', type: 'FÍSICO', power: 22, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arremesso rápido de lâminas de projétil.' },
-          { name: 'Bastão Bo', type: 'TÁTICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Golpe contundente com bastão retrátil.' },
+          { name: 'Batarangue', type: 'FÍSICO', power: 27, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arremesso rápido de lâminas de projétil.' },
+          { name: 'Bastão Bo', type: 'TÁTICO', power: 38, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Golpe contundente com bastão retrátil.' },
           { name: 'Acrobacia', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Esquiva ágil aumentando a taxa de crítico.' },
           { name: 'Golpe Final', type: 'ESPECIAL', power: 55, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Sequência de golpes táticos devastadores.' }
         ]
@@ -552,7 +620,7 @@
         img: 'cyborg.png',
         str: 9, agi: 5, res: 9, pow: 8,
         moves: [
-          { name: 'Soco de Aço', type: 'FÍSICO', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Soco potente revestido de titânio.' },
+          { name: 'Soco de Aço', type: 'FÍSICO', power: 30, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Soco potente revestido de titânio.' },
           { name: 'Canhão Laser', type: 'ENERGIA', power: 35, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Disparo de feixe de energia concentrada.' },
           { name: 'Blindagem', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Reforça a carcaça de metal reduzindo dano.' },
           { name: 'Canhão Sônico', type: 'ESPECIAL', power: 58, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Disparo sônico máximo de concussão.' }
@@ -565,7 +633,7 @@
         img: 'estelar.png',
         str: 8, agi: 7, res: 7, pow: 9,
         moves: [
-          { name: 'Starbolt', type: 'ENERGIA', power: 24, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Esferas verticais de energia verde ultravioleta.' },
+          { name: 'Starbolt', type: 'ENERGIA', power: 29, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Esferas verticais de energia verde ultravioleta.' },
           { name: 'Voo Rasante', type: 'FÍSICO', power: 30, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Investida aérea em alta velocidade.' },
           { name: 'Carga Solar', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Absorve radiação para restaurar HP.' },
           { name: 'Nova Tamaranea', type: 'ESPECIAL', power: 60, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Explosão omnidirecional de energia solar.' }
@@ -578,7 +646,7 @@
         img: 'ravena.png',
         str: 5, agi: 6, res: 6, pow: 10,
         moves: [
-          { name: 'Garra de Sombra', type: 'MAGIA', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeção sombria em forma de garras.' },
+          { name: 'Garra de Sombra', type: 'MAGIA', power: 30, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeção sombria em forma de garras.' },
           { name: 'Telecinese', type: 'MAGIA', power: 34, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Arremessa escombros contra o oponente.' },
           { name: 'Escudo Sombrio', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura HP canalizando energia negra.' },
           { name: 'Azarath Metrion', type: 'ESPECIAL', power: 62, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Encantação ancestral que consome o alvo.' }
@@ -591,8 +659,8 @@
         img: 'mutano.png',
         str: 7, agi: 8, res: 7, pow: 6,
         moves: [
-          { name: 'Gato Rápido', type: 'FÍSICO', power: 20, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arranhão veloz em forma de felino.' },
-          { name: 'Gorila Pisotão', type: 'FÍSICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Pisotão pesado causando grande impacto.' },
+          { name: 'Gato Rápido', type: 'FÍSICO', power: 26, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Arranhão veloz em forma de felino.' },
+          { name: 'Gorila Pisotão', type: 'FÍSICO', power: 38, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Pisotão pesado causando grande impacto.' },
           { name: 'Forma Tatu', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Aumenta consideravelmente a defesa.' },
           { name: 'Ataque T-Rex', type: 'ESPECIAL', power: 56, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Mordida devastadora de dinossauro.' }
         ]
@@ -604,8 +672,8 @@
         img: 'besouro azul.png',
         str: 8, agi: 7, res: 8, pow: 8,
         moves: [
-          { name: 'Lâmina Escaravelho', type: 'FÍSICO', power: 23, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Corte rápido com espadas alienígenas.' },
-          { name: 'Disparo Plasma', type: 'ENERGIA', power: 33, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Tiro de plasma energizado.' },
+          { name: 'Lâmina Escaravelho', type: 'FÍSICO', power: 38, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Corte rápido com espadas alienígenas.' },
+          { name: 'Disparo Plasma', type: 'ENERGIA', power: 39, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Tiro de plasma energizado.' },
           { name: 'Escudo Alien', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Ativa barreira do escaravelho.' },
           { name: 'Canhão Supremo', type: 'ESPECIAL', power: 58, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Ataque total de artilharia alienígena.' }
         ]
@@ -619,7 +687,7 @@
         img: 'terra.png',
         str: 7, agi: 6, res: 7, pow: 8,
         moves: [
-          { name: 'Pedra Voadora', type: 'FÍSICO', power: 22, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta rochas contra o oponente.' },
+          { name: 'Pedra Voadora', type: 'FÍSICO', power: 27, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta rochas contra o oponente.' },
           { name: 'Terremoto', type: 'TÁTICO', power: 35, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Treme o solo causando grande dano.' },
           { name: 'Muralha de Pedra', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Ergue barreiras rochosas.' },
           { name: 'Meteoro Terrestre', type: 'ESPECIAL', power: 55, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Esmaga o inimigo com pedra gigante.' }
@@ -629,11 +697,11 @@
         id: 'redx',
         name: 'Red X',
         role: 'Vilão',
-        img: 'red x.png',
+        img: 'terra.png',
         str: 8, agi: 10, res: 6, pow: 7,
         moves: [
-          { name: 'X-Shuriken', type: 'FÍSICO', power: 24, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de lâminas em formato X.' },
-          { name: 'Corte Vermelho', type: 'TÁTICO', power: 34, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque acrobático surpresa.' },
+          { name: 'X-Shuriken', type: 'FÍSICO', power: 29, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de lâminas em formato X.' },
+          { name: 'Corte Vermelho', type: 'TÁTICO', power: 40, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque acrobático surpresa.' },
           { name: 'Teleporte X', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Aumenta a velocidade de esquiva.' },
           { name: 'Aniquilação X', type: 'ESPECIAL', power: 57, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Sequência veloz e mortal de disparos.' }
         ]
@@ -645,8 +713,8 @@
         img: 'estrela negra.png',
         str: 8, agi: 8, res: 7, pow: 9,
         moves: [
-          { name: 'Raio Violeta', type: 'ENERGIA', power: 25, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de energia negra purpúrea.' },
-          { name: 'Golpe Sombrio', type: 'FÍSICO', power: 33, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Investida cósmica pesada.' },
+          { name: 'Raio Violeta', type: 'ENERGIA', power: 30, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de energia negra purpúrea.' },
+          { name: 'Golpe Sombrio', type: 'FÍSICO', power: 39, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Investida cósmica pesada.' },
           { name: 'Absorção Solar', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura vida absorvendo energia.' },
           { name: 'Supernova Negra', type: 'ESPECIAL', power: 59, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Explosão roxa devastadora.' }
         ]
@@ -658,8 +726,8 @@
         img: 'irmão sangue.png',
         str: 7, agi: 6, res: 8, pow: 9,
         moves: [
-          { name: 'Onda Psíquica', type: 'MAGIA', power: 23, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Ataque mental direto.' },
-          { name: 'Dreno de Vida', type: 'MAGIA', power: 30, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Danos no inimigo convertidos em HP.' },
+          { name: 'Onda Psíquica', type: 'MAGIA', power: 38, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Ataque mental direto.' },
+          { name: 'Dreno de Vida', type: 'MAGIA', power: 36, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Danos no inimigo convertidos em HP.' },
           { name: 'Controle Mental', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_agi', desc: 'Confunde o oponente.' },
           { name: 'Esmagamento Psíquico', type: 'ESPECIAL', power: 56, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Ataque mental omnidirecional.' }
         ]
@@ -672,7 +740,7 @@
         str: 9, agi: 9, res: 8, pow: 7,
         moves: [
           { name: 'Golpe de Espada', type: 'FÍSICO', power: 26, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Corte cirúrgico de combate.' },
-          { name: 'Bomba de Fumaça', type: 'TÁTICO', power: 32, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque furtivo cegante.' },
+          { name: 'Bomba de Fumaça', type: 'TÁTICO', power: 38, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Ataque furtivo cegante.' },
           { name: 'Mestre Estrategista', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'buff_def', desc: 'Aumenta a defesa analítica.' },
           { name: 'Execução Mortal', type: 'ESPECIAL', power: 61, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Combo letal ininterrupto.' }
         ]
@@ -684,10 +752,23 @@
         img: 'trigon.png',
         str: 10, agi: 5, res: 10, pow: 10,
         moves: [
-          { name: 'Chama Infernal', type: 'MAGIA', power: 28, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta fogo demoníaco.' },
-          { name: 'Laser dos Quatro Olhos', type: 'ENERGIA', power: 38, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Feixe de energia destrutivo.' },
+          { name: 'Chama Infernal', type: 'MAGIA', power: 38, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Projeta fogo demoníaco.' },
+          { name: 'Laser dos Quatro Olhos', type: 'ENERGIA', power: 49, ppMax: 8, ppCurr: 8, category: 'atk', desc: 'Feixe de energia destrutivo.' },
           { name: 'Poder Demoníaco', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Recupera forças do submundo.' },
-          { name: 'Apocalipse', type: 'ESPECIAL', power: 65, ppMax: 2, ppCurr: 2, category: 'special', desc: 'Destruição total da arena.' }
+          { name: 'Apocalipse', type: 'ESPECIAL', power: 82, ppMax: 3, ppCurr: 2, category: 'special', desc: 'Destruição total da arena.' }
+        ]
+      },
+      batman: {
+        id: 'batman',
+        name: 'Batman',
+        role: 'Herói',
+        img: 'batman.png',
+        str: 10, agi: 10, res: 10, pow: 10,
+        moves: [
+          { name: 'Preparação Tática', type: 'SUPORTE', power: 0, ppMax: 99, ppCurr: 99, category: 'buff_def', desc: 'Batman analisa o adversário e prepara sua estratégia.' },
+          { name: 'Ataque Sombrio', type: 'FÍSICO', power: 80, ppMax: 99, ppCurr: 99, category: 'atk', desc: 'Um golpe preciso vindo das sombras.' },
+          { name: 'Gadgets do Morcego', type: 'SUPORTE', power: 0, ppMax: 99, ppCurr: 99, category: 'heal', desc: 'Usa tecnologia avançada para recuperar energia.' },
+          { name: 'Plano Infalível', type: 'ESPECIAL', power: 9999, ppMax: 99, ppCurr: 99, category: 'onehit', desc: 'Um plano preparado para derrotar qualquer adversário com um único ataque.' }
         ]
       },
       master: {
@@ -697,16 +778,100 @@
         img: 'mestre dos jogos.png',
         str: 9, agi: 8, res: 9, pow: 10,
         moves: [
-          { name: 'Raio Amuleto', type: 'ENERGIA', power: 26, ppMax: 20, ppCurr: 20, category: 'atk', desc: 'Disparo de energia do amuleto.' },
-          { name: 'Roubo de Poder', type: 'TÁTICO', power: 36, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Absorve atributos do oponente.' },
+          { name: 'Raio Amuleto', type: 'ENERGIA', power: 23, ppMax: 20, ppCurr: 20, category: 'atk', desc: 'Disparo de energia do amuleto.' },
+          { name: 'Roubo de Poder', type: 'TÁTICO', power: 30, ppMax: 10, ppCurr: 10, category: 'atk', desc: 'Absorve atributos do oponente.' },
           { name: 'Recarga Dimensional', type: 'SUPORTE', power: 0, ppMax: 5, ppCurr: 5, category: 'heal', desc: 'Restaura HP usando a arena.' },
-          { name: 'Aniquilação da Arena', type: 'ESPECIAL', power: 64, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Golpe supremo absorvido de todos.' }
+          { name: 'Aniquilação da Arena', type: 'ESPECIAL', power: 55, ppMax: 3, ppCurr: 3, category: 'special', desc: 'Golpe supremo absorvido de todos.' }
         ]
       }
     };
 
     // Ordem da Campanha PVE
     const PVE_ORDER = ['terra', 'redx', 'blackfire', 'sangue', 'slade', 'trigon', 'master'];
+
+    // Desbloqueios salvos neste navegador. O código é local e serve para um jogo offline.
+    const ADMIN_PASSWORD = 'TITAADMIN';
+    // Mantém o desbloqueio durante a sessão mesmo se o navegador bloquear o localStorage
+    // (isso pode acontecer quando o jogo é aberto diretamente como arquivo .html).
+    let batmanUnlockedThisSession = false;
+    function safeGetStorage(key) {
+      try { return window.localStorage.getItem(key); } catch (error) { return null; }
+    }
+    function safeSetStorage(key, value) {
+      try { window.localStorage.setItem(key, value); } catch (error) { /* segue com o desbloqueio em memória */ }
+    }
+    function isStoryComplete() { return safeGetStorage('titansStoryComplete') === 'true'; }
+    function isBatmanUnlocked() {
+      return batmanUnlockedThisSession || safeGetStorage('titansBatmanUnlocked') === 'true';
+    }
+    window.toggleAdminPanel = function(event) {
+      if (event) event.stopPropagation();
+      const panel = document.getElementById('adminPopover');
+      if (!panel) return;
+      panel.classList.toggle('hidden');
+      if (!panel.classList.contains('hidden')) {
+        const input = document.getElementById('adminPasswordInput');
+        const message = document.getElementById('adminLoginMessage');
+        if (input) { input.value = ''; setTimeout(() => input.focus(), 0); }
+        if (message) message.textContent = isBatmanUnlocked() ? 'Batman já está desbloqueado neste navegador.' : 'Acesso restrito.';
+      }
+    };
+    window.closeAdminPanel = function() {
+      const panel = document.getElementById('adminPopover');
+      if (panel) panel.classList.add('hidden');
+    };
+    window.submitAdminPassword = function(event) {
+      if (event) event.preventDefault();
+      const input = document.getElementById('adminPasswordInput');
+      const message = document.getElementById('adminLoginMessage');
+      if (!input || !message) return;
+      // Ignora espaços extras e diferença entre maiúsculas/minúsculas (comum em celular e teclado com autocorreção)
+      const typedPassword = (input.value || '').normalize('NFKC').replace(/\s+/g, '').toUpperCase();
+      if (typedPassword === ADMIN_PASSWORD.toUpperCase()) {
+        batmanUnlockedThisSession = true;
+        safeSetStorage('titansBatmanUnlocked', 'true');
+        const status = document.getElementById('adminStatus');
+        if (status) {
+          status.innerText = 'Batman desbloqueado! Acesse Heróis Titãs.';
+          status.className = 'font-gb text-[9px] text-green-400';
+        }
+        message.textContent = 'Senha correta! Batman foi desbloqueado.';
+        message.className = 'text-[10px] text-green-400 mt-2';
+        input.value = '';
+        // Atualiza a lista de personagens imediatamente, inclusive se a seleção já estiver aberta.
+        gameState.currentTab = 'heroes';
+        if (typeof renderCharGrid === 'function') renderCharGrid();
+        const selectionScreen = document.getElementById('screenSelect');
+        if (selectionScreen && !selectionScreen.classList.contains('hidden')) {
+          if (typeof switchCharTab === 'function') switchCharTab('heroes');
+          if (typeof selectCharForPreview === 'function') selectCharForPreview('batman');
+        }
+        window.closeAdminPanel();
+        const unlockModal = document.getElementById('secretUnlockModal');
+        if (unlockModal) unlockModal.classList.remove('hidden');
+      } else {
+        message.textContent = 'Senha incorreta. Confira se digitou TITAADMIN.';
+        message.className = 'text-[10px] text-red-400 mt-2';
+        input.select();
+      }
+    };
+    let launchBatmanStoryAfterIntro = false;
+    window.playAsUnlockedBatman = function() {
+      if (!isBatmanUnlocked()) return;
+      const modal = document.getElementById('secretUnlockModal');
+      if (modal) modal.classList.add('hidden');
+      gameState.mode = 'pve';
+      gameState.pveStepIndex = 0;
+      gameState.selectedP1Key = 'batman';
+      launchBatmanStoryAfterIntro = true;
+      showStoryOpening();
+    };
+
+    function refreshUnlockStatus() {
+      const status = document.getElementById('adminStatus');
+      if (status && isBatmanUnlocked()) { status.innerText = 'Batman desbloqueado! Acesse Heróis Titãs.'; status.className = 'font-gb text-[9px] text-green-400'; }
+    }
+
 
     /* ==========================================================================
        2. CANVAS FALLBACK AVATAR GENERATOR
@@ -816,7 +981,7 @@
 
     function createCombatant(charKey, isPlayerControlled = true) {
       const base = CHARACTERS_DATA[charKey];
-      const maxHp = 180 + (base.res * 12);
+      const maxHp = (charKey === 'master' ? 470 : charKey === 'trigon' ? 310 : 225 + (base.res * 14));
       
       // Clona movimentos com PP independente
       const clonedMoves = base.moves.map(m => ({
@@ -829,12 +994,15 @@
         isPlayer: isPlayerControlled,
         maxHp: maxHp,
         currentHp: maxHp,
-        atk: 14 + (base.str * 2.5) + (base.pow * 1.5),
-        def: base.res * 1.5,
+        atk: charKey === 'trigon' ? 14 + (base.str * 3.5) + (base.pow * 2.2) : 19 + (base.str * 2.8) + (base.pow * 1.8),
+        def: charKey === 'trigon' ? base.res * 2.1 : base.res * 1.75,
         spd: base.agi,
-        critRate: 0.05 + (base.agi * 0.02),
+        critRate: charKey === 'trigon' ? 0.12 + (base.agi * 0.02) : 0.08 + (base.agi * 0.02),
         moves: clonedMoves,
-        buffs: { defBonus: 0, critBonus: 0, isStunned: false }
+        buffs: { defBonus: 0, critBonus: 0, isStunned: false },
+        shieldHp: charKey === 'master' ? 85 : 0,
+        bossPhase: 1,
+        attackBonus: 0
       };
     }
 
@@ -884,14 +1052,124 @@
       { speaker: 'Slade', img: CHARACTERS_DATA.slade.img, text: 'Vou esmagar qualquer um que entrar no meu caminho.' }
     ];
 
+    // Controla qual cutscene está ativa: abertura (intro) ou epílogo (ending)
+    let storyMode = 'intro';
+    let activeStory = STORY_DIALOGUES;
+
+    function setStoryMode(mode) {
+      storyMode = mode;
+      activeStory = (mode === 'ending') ? buildEndingDialogues() : STORY_DIALOGUES;
+      const title = document.getElementById('storyTitle');
+      const backBtn = document.getElementById('storyBackBtn');
+      if (title) title.innerText = (mode === 'ending') ? 'EPÍLOGO: O FIM DO TORNEIO' : 'DESAFIO DA ARENA DIMENSIONAL';
+      if (backBtn) backBtn.innerText = (mode === 'ending') ? 'PULAR' : 'VOLTAR';
+    }
+
+    function storyBack() {
+      if (storyMode === 'ending') showEndingFinale();
+      else showMainMenu();
+    }
+
     function showStoryOpening() {
+      setStoryMode('intro');
       gameState.storyStep = 0;
       updateStoryDialogue();
       showScreen('screenStory');
     }
 
+    /* ----- Cutscene final (depois de derrotar o Mestre dos Jogos) ----- */
+    const HERO_ENDING_LINES = {
+      robin: 'Acabou, Mestre dos Jogos. Os Titãs nunca deixam um amigo para trás!',
+      cyborg: 'Sistemas estáveis, arena sob controle. Missão cumprida, Titãs!',
+      estelar: 'Que alegria! Vencemos juntos, como verdadeiros amigos!',
+      ravena: 'Sua arena acabou. Azarath Metrion Zinthos... descanse.',
+      mutano: 'Ha! Quem disse que videogame não é coisa de herói?',
+      besouro: 'O escaravelho aprova essa vitória. Ninguém mais será escravo da sua arena!',
+      batman: 'Todo plano tem uma falha. O seu foi acreditar que ninguém estaria preparado.'
+    };
+
+    function buildEndingDialogues() {
+      const p1Key = gameState.selectedP1Key;
+      const used = [p1Key];
+      const pick = (prefs) => {
+        const key = prefs.find(k => !used.includes(k) && CHARACTERS_DATA[k]) || prefs[0];
+        used.push(key);
+        return key;
+      };
+      const line = (key, text) => ({ speaker: CHARACTERS_DATA[key].name, img: CHARACTERS_DATA[key].img, text });
+
+      const a = pick(['robin', 'cyborg']);
+      const b = pick(['ravena', 'estelar', 'mutano']);
+      const c = pick(['mutano', 'besouro', 'estelar']);
+      const d = pick(['estelar', 'besouro', 'cyborg', 'robin']);
+
+      return [
+        line('master', 'Impossível... o poder do meu amuleto se apagou!'),
+        line(p1Key, HERO_ENDING_LINES[p1Key] || 'Acabou, Mestre dos Jogos. A arena não vai mais roubar o poder de ninguém!'),
+        line(a, 'Libertem todos os prisioneiros! O torneio acabou!'),
+        line('master', 'Vocês venceram... mas a Arena Supreme vai desabar junto comigo!'),
+        line(b, 'Eu abro um portal para Jump City! Todos juntos, rápido!'),
+        line(c, 'Ei, a gente ganhou o torneio! Alguém quer pizza?'),
+        line(d, 'Vamos para casa, amigos! Jump City está esperando por nós!')
+      ];
+    }
+
+    function playFanfare() {
+      if (typeof audioEnabled === 'undefined' || !audioEnabled) return;
+      try {
+        initAudio();
+        if (!audioCtx) return;
+        const notes = [523, 659, 784, 1047, 784, 1047];
+        const t0 = audioCtx.currentTime;
+        notes.forEach((freq, i) => {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'square';
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          const start = t0 + i * 0.14;
+          osc.frequency.setValueAtTime(freq, start);
+          gain.gain.setValueAtTime(0.1, start);
+          gain.gain.linearRampToValueAtTime(0.01, start + 0.13);
+          osc.start(start); osc.stop(start + 0.14);
+        });
+      } catch (error) { /* som é opcional */ }
+    }
+
+    function startEndingCutscene() {
+      triggerBattleTransition(() => {
+        setStoryMode('ending');
+        gameState.storyStep = 0;
+        updateStoryDialogue();
+        showScreen('screenStory');
+        playFanfare();
+      });
+    }
+
+    function showEndingFinale() {
+      const row = document.getElementById('endingHeroes');
+      if (row) {
+        row.innerHTML = '';
+        Object.keys(CHARACTERS_DATA).forEach(key => {
+          const ch = CHARACTERS_DATA[key];
+          if (ch.role !== 'Herói') return;
+          if (key === 'batman' && gameState.selectedP1Key !== 'batman') return;
+          const img = document.createElement('img');
+          img.src = ch.img; img.alt = ch.name; img.title = ch.name;
+          img.className = 'w-12 h-12 sm:w-14 sm:h-14 object-cover rounded border-2 border-yellow-400 bg-slate-950';
+          row.appendChild(img);
+        });
+      }
+      showScreen('screenEnding');
+      playFanfare();
+    }
+
+    function finishEnding() {
+      setStoryMode('intro');
+      showMainMenu();
+    }
+
     function updateStoryDialogue() {
-      const step = STORY_DIALOGUES[gameState.storyStep];
+      const step = activeStory[gameState.storyStep];
       document.getElementById('storySpeakerName').innerText = step.speaker;
       document.getElementById('storySpeakerImg').src = step.img;
       document.getElementById('storyText').innerText = `"${step.text}"`;
@@ -899,11 +1177,19 @@
 
     function nextStoryStep() {
       gameState.storyStep++;
-      if (gameState.storyStep < STORY_DIALOGUES.length) {
+      if (gameState.storyStep < activeStory.length) {
         updateStoryDialogue();
         playSound('select');
+      } else if (storyMode === 'ending') {
+        showEndingFinale();
       } else {
-        openCharSelection('p1_pve');
+        if (launchBatmanStoryAfterIntro && isBatmanUnlocked()) {
+          launchBatmanStoryAfterIntro = false;
+          gameState.selectedP1Key = 'batman';
+          startPveBattleSequence();
+        } else {
+          openCharSelection('p1_pve');
+        }
       }
     }
 
@@ -956,20 +1242,26 @@
       const grid = document.getElementById('charGrid');
       grid.innerHTML = '';
 
-      Object.keys(CHARACTERS_DATA).forEach(key => {
+      // Batman é incluído explicitamente na aba de heróis após a senha correta.
+      const characterKeys = Object.keys(CHARACTERS_DATA).filter(key => key !== 'batman');
+      if (isBatmanUnlocked() && !characterKeys.includes('batman')) characterKeys.push('batman');
+
+      characterKeys.forEach(key => {
         const char = CHARACTERS_DATA[key];
         if (char.id === 'master') return;
-
         const isHero = char.role === 'Herói';
         if ((gameState.currentTab === 'heroes' && !isHero) || (gameState.currentTab === 'villains' && isHero)) return;
 
+        const isLockedTrigon = key === 'trigon' && !isStoryComplete();
+        const isBatman = key === 'batman';
         const card = document.createElement('div');
-        card.className = `cursor-pointer bg-slate-900 border-2 border-slate-700 hover:border-yellow-400 p-2 rounded flex flex-col items-center gap-1 transition`;
-        card.onclick = () => selectCharForPreview(key);
+        card.className = `cursor-pointer bg-slate-900 border-2 ${isLockedTrigon ? 'border-red-900 opacity-70' : isBatman ? 'border-yellow-400 shadow-[0_0_12px_rgba(250,204,21,0.35)] hover:border-yellow-200' : 'border-slate-700 hover:border-yellow-400'} p-2 rounded flex flex-col items-center gap-1 transition`;
+        card.onclick = () => isLockedTrigon ? alert('Trigon será liberado depois que você concluir o Modo História!') : selectCharForPreview(key);
 
         card.innerHTML = `
-          <img src="${char.img}" class="w-12 h-12 object-cover rounded border border-slate-700" alt="${char.name}">
-          <span class="font-gb text-[8px] text-center text-slate-200 truncate w-full">${char.name}</span>
+          <div class="relative"><img src="${char.img}" class="w-12 h-12 object-cover rounded border ${isBatman ? 'border-yellow-400' : 'border-slate-700'}" alt="${char.name}">${isLockedTrigon ? '<span class="absolute inset-0 flex items-center justify-center bg-black/70 text-xl">🔒</span>' : ''}</div>
+          <span class="font-gb text-[8px] text-center ${isBatman ? 'text-yellow-300' : 'text-slate-200'} truncate w-full">${isLockedTrigon ? '??? (BLOQUEADO)' : char.name}</span>
+          ${isBatman ? '<span class="font-gb text-[7px] text-yellow-400">PERSONAGEM SECRETO</span>' : ''}
         `;
         grid.appendChild(card);
       });
@@ -978,6 +1270,8 @@
     let currentlyPreviewedKey = 'robin';
 
     function selectCharForPreview(key) {
+      if (key === 'trigon' && !isStoryComplete()) { alert('Conclua o Modo História para desbloquear Trigon.'); return; }
+      if (key === 'batman' && !isBatmanUnlocked()) { alert('Batman está disponível apenas pelo Painel Administrador.'); return; }
       currentlyPreviewedKey = key;
       const char = CHARACTERS_DATA[key];
 
@@ -1241,7 +1535,7 @@
         // Lógica de Dano e Suporte
         setTimeout(() => {
           if (move.category === 'heal') {
-            const healAmt = Math.round(attacker.maxHp * 0.3);
+            const healAmt = Math.round(attacker.maxHp * (attacker.id === 'trigon' ? 0.38 : 0.3));
             attacker.currentHp = Math.min(attacker.maxHp, attacker.currentHp + healAmt);
             updateHpBars();
             playSound('heal');
@@ -1259,22 +1553,37 @@
           }
 
           if (move.category === 'buff_agi') {
-            attacker.buffs.critBonus += 0.2;
+            // A Acrobacia do Robin concede +90 pontos percentuais de crítico.
+            // O bônus não acumula acima disso; os demais personagens mantêm +20%.
+            if (attacker.id === 'robin') attacker.buffs.critBonus = Math.max(attacker.buffs.critBonus, 0.90 - attacker.critRate);
+            else attacker.buffs.critBonus += 0.20;
             playSound('heal');
-            showFloatingDmg(attackerKey, `CRÍTICO +`, '#eab308');
-            typeWriterText(`A precisão de ${attacker.name} aumentou!`, () => switchTurn());
+            showFloatingDmg(attackerKey, attacker.id === 'robin' ? 'CRÍTICO 90%' : 'CRÍTICO +', '#eab308');
+            typeWriterText(attacker.id === 'robin' ? 'A Acrobacia deixou o Robin com 90% de chance de crítico!' : `A precisão de ${attacker.name} aumentou!`, () => switchTurn());
             return;
           }
 
           // Cálculo de Dano Ativo
-          const isCrit = Math.random() < (attacker.critRate + attacker.buffs.critBonus);
+          const critChance = Math.min(1, attacker.critRate + attacker.buffs.critBonus);
+          const isCrit = move.category === 'onehit' ? false : Math.random() < critChance;
           let rawDmg = (attacker.atk * (move.power / 20));
           if (isCrit) rawDmg *= 1.5;
 
           const totalDef = defender.def + defender.buffs.defBonus;
-          const finalDamage = Math.max(4, Math.round(rawDmg - (totalDef * 0.4)));
+          const finalDamage = move.category === 'onehit'
+            ? defender.currentHp + (defender.id === 'master' ? defender.shieldHp : 0)
+            : Math.max(4, Math.round(rawDmg - (totalDef * 0.4)));
 
-          defender.currentHp = Math.max(0, defender.currentHp - finalDamage);
+          let damageAfterShield = finalDamage;
+          if (defender.id === 'master' && defender.shieldHp > 0) {
+            const absorbed = Math.min(defender.shieldHp, damageAfterShield);
+            defender.shieldHp -= absorbed;
+            damageAfterShield -= absorbed;
+            if (absorbed > 0 && defender.shieldHp === 0) {
+              typeWriterText('A Barreira Dimensional do Mestre dos Jogos foi quebrada!', () => {});
+            }
+          }
+          defender.currentHp = Math.max(0, defender.currentHp - damageAfterShield);
 
           // Animações de Receber Dano (Piscar + Shake)
           const defenderSprite = document.getElementById(`${defenderKey === 'p1' ? 'ally' : 'enemy'}Sprite`);
@@ -1293,13 +1602,22 @@
             updateHpBars();
 
             // Checa Transformação Suprema do Mestre dos Jogos
-            if (defender.id === 'master' && !gameState.isBossPhase2 && defender.currentHp <= defender.maxHp * 0.5) {
-              gameState.isBossPhase2 = true;
-              defender.atk += 10;
-              typeWriterText(`⚠️ MESTRE DOS JOGOS ASSUMIU A FORMA SUPREMA! PODER AUMENTADO!`, () => {
-                checkBattleEndOrNext(attackerKey, defenderKey);
-              });
-              return;
+            if (defender.id === 'master') {
+              const hpRatio = defender.currentHp / defender.maxHp;
+              const nextPhase = hpRatio <= 0.30 ? 3 : hpRatio <= 0.70 ? 2 : 1;
+              if (nextPhase > defender.bossPhase) {
+                defender.bossPhase = nextPhase;
+                if (nextPhase === 2) {
+                  defender.atk += 8;
+                  defender.shieldHp = 65;
+                  typeWriterText('MESTRE DOS JOGOS: ABSORÇÃO DOS CAMPEÕES! Os poderes dos vilões despertam. Escudo dimensional restaurado!', () => checkBattleEndOrNext(attackerKey, defenderKey));
+                } else {
+                  defender.atk += 9;
+                  defender.def += 3;
+                  typeWriterText('MESTRE DOS JOGOS: FORMA SUPREMA! A realidade se curva ao meu poder!', () => checkBattleEndOrNext(attackerKey, defenderKey));
+                }
+                return;
+              }
             }
 
             checkBattleEndOrNext(attackerKey, defenderKey);
@@ -1355,12 +1673,23 @@
       const p2 = gameState.p2;
       let chosenMoveIdx = 0;
 
-      // IA com prioridade de golpe especial ou cura se vida baixa
-      if (p2.currentHp < p2.maxHp * 0.35 && p2.moves[2].ppCurr > 0) {
-        chosenMoveIdx = 2; // Move de cura/suporte
-      } else if (p2.moves[3].ppCurr > 0 && Math.random() < 0.5) {
-        chosenMoveIdx = 3; // Especial
-      } else if (p2.moves[1].ppCurr > 0 && Math.random() < 0.6) {
+      // IA estratégica do chefe: alterna golpes, defesa/recuperação e especiais por fase.
+      if (p2.id === 'master') {
+        const ratio = p2.currentHp / p2.maxHp;
+        if (p2.shieldHp <= 0 && p2.bossPhase >= 2 && p2.moves[2].ppCurr > 0 && Math.random() < 0.25) {
+          chosenMoveIdx = 2;
+        } else if (p2.moves[3].ppCurr > 0 && (p2.bossPhase === 3 ? Math.random() < 0.35 : Math.random() < 0.30)) {
+          chosenMoveIdx = 3;
+        } else if (p2.moves[1].ppCurr > 0 && Math.random() < 0.5) {
+          chosenMoveIdx = 1;
+        } else {
+          chosenMoveIdx = 0;
+        }
+      } else if (p2.currentHp < p2.maxHp * 0.45 && p2.moves[2].ppCurr > 0) {
+        chosenMoveIdx = 2;
+      } else if (p2.moves[3].ppCurr > 0 && Math.random() < 0.55) {
+        chosenMoveIdx = 3;
+      } else if (p2.moves[1].ppCurr > 0 && Math.random() < 0.5) {
         chosenMoveIdx = 1;
       }
 
@@ -1412,10 +1741,11 @@
             desc.innerText = 'Avançando para o próximo vilão da arena...';
             document.getElementById('btnResultContinue').innerText = 'PRÓXIMA BATALHA';
           } else {
+            safeSetStorage('titansStoryComplete', 'true');
             title.innerText = 'CAMPEÃO SUPREMO!';
             sub.innerText = 'Mestre dos Jogos foi derrotado!';
             desc.innerText = 'Os Jovens Titãs salvaram Jump City e a arena dimensional! Você completou o jogo!';
-            document.getElementById('btnResultContinue').innerText = 'FINALIZAR';
+            document.getElementById('btnResultContinue').innerText = 'VER FINAL';
           }
         } else {
           title.innerText = 'VOCÊ DESMAIOU!';
@@ -1439,7 +1769,8 @@
         } else if (gameState.pveStepIndex < PVE_ORDER.length) {
           startPveBattleSequence();
         } else {
-          showMainMenu();
+          // Mestre dos Jogos derrotado: cutscene de finalização
+          startEndingCutscene();
         }
       }
     }
@@ -1447,9 +1778,17 @@
     /* ==========================================================================
        15. INICIALIZAÇÃO
        ========================================================================== */
-    window.onload = function() {
-      lucide.createIcons();
-    };
+    window.addEventListener('DOMContentLoaded', function() {
+      try { lucide.createIcons(); } catch (error) { /* ícones são opcionais */ }
+      refreshUnlockStatus();
+      document.addEventListener('click', function(event) {
+        const control = document.querySelector('.admin-control');
+        if (control && !control.contains(event.target)) window.closeAdminPanel();
+      });
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') window.closeAdminPanel();
+      });
+    });
   </script>
 </body>
 </html>
