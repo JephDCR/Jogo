@@ -240,7 +240,7 @@
   <div id="transitionOverlay" class="battle-transition-overlay"></div>
 
   <!-- CABEÇALHO DO JOGO (ESTILO GBA TITLE BAR) -->
-  <header class="relative z-10 bg-slate-900 border-b-4 border-slate-700 p-2 md:p-3 shadow-xl flex justify-between items-center px-4">
+  <header id="gameHeader" class="relative z-10 bg-slate-900 border-b-4 border-slate-700 p-2 md:p-3 shadow-xl flex justify-between items-center px-4">
     <div class="flex items-center gap-3">
       <div class="bg-red-600 text-white font-gb text-xs md:text-sm px-2 py-1 rounded border-2 border-white shadow">
         FIRE RED
@@ -262,6 +262,7 @@
           <label for="adminPasswordInput" class="block text-[10px] text-slate-300 mb-1">Digite a senha para liberar o Batman:</label>
           <input id="adminPasswordInput" onkeydown="if (event.key === 'Enter') { event.preventDefault(); window.submitAdminPassword(event); }" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="Senha de acesso" class="w-full rounded bg-slate-950 border border-slate-600 px-2 py-2 text-sm text-white outline-none focus:border-yellow-400" />
           <p id="adminLoginMessage" class="text-[10px] text-slate-400 mt-2" aria-live="polite">Acesso restrito.</p>
+          <button id="adminLockBtn" type="button" onclick="window.lockBatman()" class="hidden w-full mt-3 text-[10px] px-2 py-2 rounded bg-red-700 hover:bg-red-600 text-white font-bold">🔒 BLOQUEAR BATMAN</button>
           <div class="flex justify-end gap-2 mt-3">
             <button type="button" onclick="window.closeAdminPanel()" class="text-[10px] px-2 py-1 rounded bg-slate-700 text-white">FECHAR</button>
             <button type="button" onclick="window.submitAdminPassword(event)" class="text-[10px] px-3 py-1 rounded bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold">LIBERAR</button>
@@ -697,7 +698,7 @@
         id: 'redx',
         name: 'Red X',
         role: 'Vilão',
-        img: 'terra.png',
+        img: 'red x.png',
         str: 8, agi: 10, res: 6, pow: 7,
         moves: [
           { name: 'X-Shuriken', type: 'FÍSICO', power: 29, ppMax: 15, ppCurr: 15, category: 'atk', desc: 'Disparo de lâminas em formato X.' },
@@ -800,6 +801,9 @@
     function safeSetStorage(key, value) {
       try { window.localStorage.setItem(key, value); } catch (error) { /* segue com o desbloqueio em memória */ }
     }
+    function safeRemoveStorage(key) {
+      try { window.localStorage.removeItem(key); } catch (error) { /* ignora */ }
+    }
     function isStoryComplete() { return safeGetStorage('titansStoryComplete') === 'true'; }
     function isBatmanUnlocked() {
       return batmanUnlockedThisSession || safeGetStorage('titansBatmanUnlocked') === 'true';
@@ -809,16 +813,50 @@
       const panel = document.getElementById('adminPopover');
       if (!panel) return;
       panel.classList.toggle('hidden');
+      setHeaderAbove(!panel.classList.contains('hidden'));
       if (!panel.classList.contains('hidden')) {
         const input = document.getElementById('adminPasswordInput');
         const message = document.getElementById('adminLoginMessage');
         if (input) { input.value = ''; setTimeout(() => input.focus(), 0); }
-        if (message) message.textContent = isBatmanUnlocked() ? 'Batman já está desbloqueado neste navegador.' : 'Acesso restrito.';
+        if (message) { message.className = 'text-[10px] text-slate-400 mt-2'; message.textContent = isBatmanUnlocked() ? 'Batman já está desbloqueado neste navegador.' : 'Acesso restrito.'; }
+        updateAdminLockButton();
       }
+    };
+    // O painel nasce dentro do cabeçalho; sem isso a área principal (mesmo z-index, vem depois) fica por cima dele
+    function setHeaderAbove(isAbove) {
+      const header = document.getElementById('gameHeader');
+      if (header) header.style.zIndex = isAbove ? '40' : '';
+    }
+    function updateAdminLockButton() {
+      const lockBtn = document.getElementById('adminLockBtn');
+      if (lockBtn) lockBtn.classList.toggle('hidden', !isBatmanUnlocked());
+    }
+    window.lockBatman = function() {
+      batmanUnlockedThisSession = false;
+      launchBatmanStoryAfterIntro = false;
+      safeRemoveStorage('titansBatmanUnlocked');
+
+      const status = document.getElementById('adminStatus');
+      if (status) { status.innerText = 'Personagem secreto: bloqueado'; status.className = 'font-gb text-[9px] text-slate-500'; }
+      const unlockModal = document.getElementById('secretUnlockModal');
+      if (unlockModal) unlockModal.classList.add('hidden');
+
+      // Se a seleção de personagens estiver aberta, tira o Batman da lista e troca a prévia
+      const selectionScreen = document.getElementById('screenSelect');
+      if (selectionScreen && !selectionScreen.classList.contains('hidden')) {
+        renderCharGrid();
+        if (currentlyPreviewedKey === 'batman') selectCharForPreview(gameState.currentTab === 'heroes' ? 'robin' : 'blackfire');
+      }
+      if (gameState.selectedP1Key === 'batman') gameState.selectedP1Key = 'robin';
+
+      const message = document.getElementById('adminLoginMessage');
+      if (message) { message.textContent = 'Batman bloqueado novamente.'; message.className = 'text-[10px] text-slate-400 mt-2'; }
+      updateAdminLockButton();
     };
     window.closeAdminPanel = function() {
       const panel = document.getElementById('adminPopover');
       if (panel) panel.classList.add('hidden');
+      setHeaderAbove(false);
     };
     window.submitAdminPassword = function(event) {
       if (event) event.preventDefault();
@@ -846,6 +884,7 @@
           if (typeof switchCharTab === 'function') switchCharTab('heroes');
           if (typeof selectCharForPreview === 'function') selectCharForPreview('batman');
         }
+        updateAdminLockButton();
         window.closeAdminPanel();
         const unlockModal = document.getElementById('secretUnlockModal');
         if (unlockModal) unlockModal.classList.remove('hidden');
